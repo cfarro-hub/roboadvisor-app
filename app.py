@@ -427,45 +427,5 @@ with st.expander("View recommended portfolios", expanded=True):
                 {c: "{:.1%}" for c in base_table.columns if c.startswith("w_")}
             )
         )
-
-        st.subheader("Adjust weights and see the impact")
-
-        options = list(base_table["Portfolio"])
-        ref_name = st.selectbox("Choose base portfolio", options)
-        base_row = base_table[base_table["Portfolio"] == ref_name].iloc[0]
-        base_sh = base_row["Sharpe"]
-
-        st.write(
-            f"Base {ref_name}: return {base_row['Expected Return']:.2%}, "
-            f"vol {base_row['Volatility']:.2%}, Sharpe {base_sh:.2f}"
-        )
-
-        weight_cols = st.columns(len(tickers))
-        new_w = []
-        for i, t in enumerate(tickers):
-            default_w = float(base_row[f"w_{t}"])
-            with weight_cols[i]:
-                w_pct = st.slider(f"{t} (%)", 0.0, 100.0, default_w * 100.0)
-            new_w.append(w_pct / 100.0)
-
-        if st.button("Evaluate custom portfolio"):
-            w = np.array(new_w)
-            w = w / w.sum() if w.sum() > 0 else equal_weight(len(tickers))
-
-            ret_new = portfolio_return(w, mu)
-            vol_new = portfolio_vol(w, cov)
-            sh_new = sharpe_ratio(w, mu, cov, RISK_FREE)
-
-            st.write("New weights (normalized):")
-            st.dataframe(
-                pd.DataFrame({"Ticker": tickers, "Weight": w}).style.format({"Weight": "{:.1%}"})
-            )
-
-            st.write(
-                f"New portfolio: return {ret_new:.2%}, "
-                f"vol {vol_new:.2%}, Sharpe {sh_new:.2f}"
-            )
-
-            st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sh, profile))
     else:
         st.info("Click 'Build portfolios for this strategy' to see portfolio options and customize weights.")
