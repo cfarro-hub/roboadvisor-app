@@ -14,7 +14,12 @@ st.set_page_config(
     page_title="Robo-Advisor Demo",
     layout="wide"
 )
-
+header_col1, header_col2 = st.columns([0.1, 0.9])
+with header_col1:
+    st.image("clyde.png", width=60)   # small Clyde
+with header_col2:
+    st.markdown("### Clyde – Your Robo‑Advisor")
+    
 if "show_intro" not in st.session_state:
     st.session_state["show_intro"] = True
 
@@ -24,7 +29,7 @@ if st.session_state["show_intro"]:
     # Center Clyde image
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("clyde.png", use_column_width=True)
+        st.image("clyde.png", width=250)
 
     st.markdown("Hi, my name is Clyde.")
     st.write("I am your robo‑advisor. I will help you build a portfolio tailored to you.")
@@ -313,7 +318,7 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
 
 
 # ===== App layout =====
-st.title("Clyde – Portfolio Strategies")
+st.title("Portfolio Strategies")
 profile, esg_only = risk_profile_from_answers()
 
 # If the form has not been submitted yet, stop here.
@@ -324,7 +329,7 @@ if profile is None:
 st.markdown("---")
 
 with st.expander("View recommended portfolios", expanded=True):
-    st.header("Step 2 – Strategy options for your profile")
+    st.header("Strategy options for your profile")
 
 candidate_names = strategies_for_profile(profile, esg_only)
 
