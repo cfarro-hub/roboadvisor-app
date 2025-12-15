@@ -9,7 +9,7 @@ import datetime as dt
 RISK_FREE = 0.02
 LOOKBACK_YEARS = 5
 
-
+DEFAULT_TICKERS = ["SPY", "VEA", "EEM", "AGG", "BNDX", "VNQ", "GLD"]
 # ===== Data + math helpers =====
 def get_price_data(tickers, years=5):
     end = dt.date.today()
