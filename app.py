@@ -223,10 +223,11 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
     else:
         msgs.append("Sharpe ratio is similar to the reference: change is small in efficiency terms.")
     if profile == "conservative" and vol > 0.12:
-        msg.append("Warning: volatility is high for a conservative profile.")
+        msgs.append("Warning: volatility is high for a conservative profile.")
     if profile == "aggressive" and vol < 0.10:
-        msg.append("Note: volatility is low for an aggressive profile; you may be under‑risked.")
-    return " ".join(msg)
+        msgs.append("Note: volatility is low for an aggressive profile; you may be under‑risked.")
+    return " ".join(msgs)
+
 # ===== App layout =====
 st.set_page_config(page_title="Robo-Advisor Demo", layout="wide")
 st.title("Robo‑Advisor – Portfolio Strategies")
