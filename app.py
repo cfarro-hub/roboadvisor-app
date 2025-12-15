@@ -26,7 +26,7 @@ if st.session_state["show_intro"]:
     # Big Clyde image centered
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("clyde.png", width=300)
+        st.image("clyde.png", width=350)
 
     st.markdown("### 🤖 Hi, my name is Clyde.")
     st.write("I am your robo‑advisor. I will help you build a portfolio tailored to you.")
@@ -41,9 +41,7 @@ if st.session_state["show_intro"]:
 # Mini Clyde header (shown on all pages after intro)
 header_col1, header_col2 = st.columns([0.1, 0.9])
 with header_col1:
-    st.image("clyde.png", width=60)
-with header_col2:
-    st.markdown("### Clyde – Your Robo‑Advisor")
+    st.image("clyde.png", width=45)
 
 # flag to remember if portfolios were built
 if "built_portfolios" not in st.session_state:
@@ -327,11 +325,18 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
 
 # ===== App layout =====
 st.title("Portfolio Strategies")
-profile, esg_only = risk_profile_from_answers()
 
-if profile is None:
-    st.info("Fill in the questionnaire above to see portfolio strategies tailored to you.")
-    st.stop()
+# Only ask the questionnaire if we do not have a profile yet
+if "profile" not in st.session_state or "esg_only" not in st.session_state:
+    profile, esg_only = risk_profile_from_answers()
+
+    if profile is None:
+        st.info("Fill in the questionnaire above to see portfolio strategies tailored to you.")
+        st.stop()
+else:
+    # Reuse stored values on later reruns (e.g. after clicking buttons)
+    profile = st.session_state["profile"]
+    esg_only = st.session_state["esg_only"]
 
 st.markdown("---")
 
