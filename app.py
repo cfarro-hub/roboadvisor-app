@@ -303,7 +303,7 @@ if profile is None:
 st.markdown("---")
 
 with st.expander("View recommended portfolios", expanded=True):
-st.header("Step 2 – Strategy options for your profile")
+    st.header("Step 2 – Strategy options for your profile")
 
 candidate_names = strategies_for_profile(profile, esg_only)
 
