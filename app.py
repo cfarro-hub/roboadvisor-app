@@ -220,9 +220,6 @@ def strategies_for_profile(profile, esg_only: bool):
     else:
         return ["Core", "Value Tilt", "Innovative Technology", "Goldman Sachs Smart Beta", "Crypto ETF"]
 
-    if esg_only:
-        base = [name for name in base if name in esg_names]
-    return base
 
 def roboadvisor_comment(ret, vol, sh, base_sh, profile):
     msgs = []
@@ -243,7 +240,7 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
 st.set_page_config(page_title="Robo-Advisor Demo", layout="wide")
 st.title("Robo‑Advisor – Portfolio Strategies")
 
-profile, esg_only = risk_profile_from_answers()
+profile = risk_profile_from_answers()
 
 # Initialize session state containers once
 if "mu" not in st.session_state:
