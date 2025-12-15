@@ -9,43 +9,70 @@ import datetime as dt
 RISK_FREE = 0.02
 LOOKBACK_YEARS = 5
 
-# ===== Clyde front page =====
-st.set_page_config(
-    page_title="Robo-Advisor Demo",
-    layout="wide"
-)
+# ===== Page setup =====
+st.set_page_config(page_title="Clyde – Robo‑Advisor", layout="wide")
 
-# Track whether user is still on intro page
-if "show_intro" not in st.session_state:
-    st.session_state["show_intro"] = True
+# Track where user is: "landing" or "app"
+if "page" not in st.session_state:
+    st.session_state["page"] = "landing"
 
-# Intro page with big Clyde
-if st.session_state["show_intro"]:
-    st.title("Clyde – Your Robo‑Advisor")
+def go_to_app():
+    st.session_state["page"] = "app"
 
-    # Big Clyde image centered
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.image("clyde.png", width=350)
+# ===== Landing page =====
+if st.session_state["page"] == "landing":
+    # Hero section
+    hero_left, hero_right = st.columns([2, 1])
+    with hero_left:
+        st.title("Meet Clyde, your robo‑advisor")
+        st.markdown(
+            "Clyde helps you build and maintain a diversified portfolio "
+            "based on your goals, time horizon, and comfort with risk."
+        )
+        st.markdown(
+            "- Automated, diversified ETF portfolios\n"
+            "- Built from your answers to a short questionnaire\n"
+            "- Monitored and adjusted over time"
+        )
+        if st.button("Start your questionnaire"):
+            go_to_app()
+            st.rerun()
+    with hero_right:
+        st.image("clyde.png", width=220)
 
-    st.markdown("### 🤖 Hi, my name is Clyde.")
-    st.write("I am your robo‑advisor. I will help you build a portfolio tailored to you.")
-    st.write("When you are ready, click the button below to start the questionnaire.")
+    st.markdown("---")
 
-    if st.button("Please click here"):
-        st.session_state["show_intro"] = False
-        st.rerun()
+    # How Clyde works
+    st.markdown("### How Clyde works")
 
-    st.stop()  # stop app while on intro page
+    step_cols = st.columns(3)
+    steps = [
+        ("1. Answer a few questions",
+         "Share your goals, investment horizon, and comfort with market ups and downs."),
+        ("2. Get a diversified portfolio",
+         "Clyde suggests a mix of ETFs that fits your risk profile."),
+        ("3. Stay on track automatically",
+         "Your portfolio can be monitored and rebalanced over time."),
+    ]
+    for col, (title, text) in zip(step_cols, steps):
+        with col:
+            card = st.container(border=True)
+            with card:
+                st.subheader(title)
+                st.write(text)
 
-# Mini Clyde header (shown on all pages after intro)
-header_col1, header_col2 = st.columns([0.9, 0.1])
-with header_col1:
-    st.image("clyde.png", width=50)
+    st.markdown("---")
 
-# flag to remember if portfolios were built
-if "built_portfolios" not in st.session_state:
-    st.session_state["built_portfolios"] = False
+    # Who Clyde is for
+    st.markdown("### Who Clyde might be right for")
+    st.markdown(
+        "- You are investing for 3 or more years.\n"
+        "- You want a professionally designed ETF mix instead of picking single stocks.\n"
+        "- You are comfortable with some risk in exchange for potential growth.\n"
+        "- You like managing your account online."
+    )
+
+    st.stop()  # do not run the rest of the app while on landing page
 
 DEFAULT_TICKERS = ["SPY", "VEA", "EEM", "AGG", "BNDX", "VNQ", "GLD"]
 
@@ -324,108 +351,120 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
 
 
 # ===== App layout =====
-st.title("Portfolio Strategies")
+# ===== Main app (questionnaire + portfolios) =====
+if st.session_state["page"] == "app":
 
-# Only ask the questionnaire if we do not have a profile yet
-if "profile" not in st.session_state or "esg_only" not in st.session_state:
-    profile, esg_only = risk_profile_from_answers()
+    # Small Clyde on top right
+    header_col1, header_col2 = st.columns([0.9, 0.1])
+    with header_col1:
+        st.markdown("### Clyde – Your robo‑advisor")
+    with header_col2:
+        st.image("clyde.png", width=60)
 
-    if profile is None:
-        st.info("Fill in the questionnaire above to see portfolio strategies tailored to you.")
-        st.stop()
-else:
-    # Reuse stored values on later reruns (e.g. after clicking buttons)
-    profile = st.session_state["profile"]
-    esg_only = st.session_state["esg_only"]
+    st.title("Portfolio strategies for you")
 
-st.markdown("---")
-
-with st.expander("View recommended portfolios", expanded=True):
-    st.header("Strategy options for your profile")
-
-    candidate_names = strategies_for_profile(profile, esg_only)
-
-    # Initialize session state containers once
-    if "mu" not in st.session_state:
-        st.session_state["mu"] = None
-        st.session_state["cov"] = None
-        st.session_state["tickers"] = None
-        st.session_state["base_table"] = None
-
-    cols = st.columns(len(candidate_names))
-    chosen_strategy = st.session_state.get("chosen_strategy", candidate_names[0])
-
-    for i, name in enumerate(candidate_names):
-        info = STRATEGIES[name]
-        with cols[i]:
-            label = name + " 🌱" if info["type"] == "esg" else name
-            st.subheader(label)
-            st.write(info["description"])
-            if st.button(f"Select {name}", key=f"choose_{name}"):
-                chosen_strategy = name
-
-    st.session_state["chosen_strategy"] = chosen_strategy
-
-    st.markdown(f"### Selected strategy: **{chosen_strategy}**")
-    st.write(STRATEGIES[chosen_strategy]["description"])
-
-    tickers = STRATEGIES[chosen_strategy]["tickers"]
-    st.write(f"Universe for this strategy: {', '.join(tickers)}")
-
-    # 1) build / rebuild portfolios when button is clicked
-    if st.button("Build portfolios for this strategy"):
-        with st.spinner("Downloading prices and running optimizations…"):
-            prices = get_price_data(tickers, years=LOOKBACK_YEARS)
-            mu, cov, tickers_new = compute_returns_and_cov(prices)
-
-        st.session_state["mu"] = mu
-        st.session_state["cov"] = cov
-        st.session_state["tickers"] = tickers_new
-
-        n = len(tickers_new)
-        ew = equal_weight(n)
-        gmv = gmv_portfolio(cov)
-        ms = max_sharpe_portfolio(mu, cov, RISK_FREE)
-        ms_prof = max_sharpe_with_risk_target(mu, cov, RISK_FREE,
-                                              risk_target_from_profile(profile))
-
-        def row(name, w):
-            return {
-                "Portfolio": name,
-                "Expected Return": portfolio_return(w, mu),
-                "Volatility": portfolio_vol(w, cov),
-                "Sharpe": sharpe_ratio(w, mu, cov, RISK_FREE),
-                **{f"w_{t}": w[i] for i, t in enumerate(tickers_new)}
-            }
-
-        st.session_state["base_table"] = pd.DataFrame([
-            row("Equal Weight", ew),
-            row("Global Min Variance (GMV)", gmv),
-            row("Max Sharpe", ms),
-            row(f"Profile Max Sharpe ({profile})", ms_prof),
-        ])
-        st.session_state["built_portfolios"] = True
-
-    # 2) if we have saved data, always show the sliders and evaluate
-    if (
-        st.session_state.get("built_portfolios", False)
-        and st.session_state["mu"] is not None
-        and st.session_state["cov"] is not None
-        and st.session_state["base_table"] is not None
-    ):
-        mu = st.session_state["mu"]
-        cov = st.session_state["cov"]
-        tickers = st.session_state["tickers"]
-        base_table = st.session_state["base_table"]
-
-        st.subheader("Base portfolios for this strategy")
-        st.dataframe(
-            base_table.style.format(
-                {"Expected Return": "{:.2%}",
-                 "Volatility": "{:.2%}",
-                 "Sharpe": "{:.2f}"} |
-                {c: "{:.1%}" for c in base_table.columns if c.startswith("w_")}
-            )
-        )
+    # Only ask questionnaire if we do not already have profile
+    if "profile" not in st.session_state or "esg_only" not in st.session_state:
+        profile, esg_only = risk_profile_from_answers()
+        if profile is None:
+            st.info("Fill in the questionnaire above to see portfolio strategies tailored to you.")
+            st.stop()
     else:
-        st.info("Click 'Build portfolios for this strategy' to see portfolio options and customize weights.")
+        profile = st.session_state["profile"]
+        esg_only = st.session_state["esg_only"]
+
+    st.markdown("---")
+
+    # Flag to remember if portfolios were built
+    if "built_portfolios" not in st.session_state:
+        st.session_state["built_portfolios"] = False
+
+    with st.expander("View recommended portfolios", expanded=True):
+        st.header("Strategy options for your profile")
+
+        candidate_names = strategies_for_profile(profile, esg_only)
+
+        # init state
+        if "mu" not in st.session_state:
+            st.session_state["mu"] = None
+            st.session_state["cov"] = None
+            st.session_state["tickers"] = None
+            st.session_state["base_table"] = None
+
+        cols = st.columns(len(candidate_names))
+        chosen_strategy = st.session_state.get("chosen_strategy", candidate_names[0])
+
+        for i, name in enumerate(candidate_names):
+            info = STRATEGIES[name]
+            with cols[i]:
+                label = name + " 🌱" if info["type"] == "esg" else name
+                card = st.container(border=True)
+                with card:
+                    st.subheader(label)
+                    st.write(info["description"])
+                    if st.button(f"Select {name}", key=f"choose_{name}"):
+                        chosen_strategy = name
+
+        st.session_state["chosen_strategy"] = chosen_strategy
+
+        st.markdown(f"### Selected strategy: **{chosen_strategy}**")
+        st.write(STRATEGIES[chosen_strategy]["description"])
+
+        tickers = STRATEGIES[chosen_strategy]["tickers"]
+        st.write(f"Universe for this strategy: {', '.join(tickers)}")
+
+        # Build portfolios
+        if st.button("Build portfolios for this strategy"):
+            with st.spinner("Downloading prices and running optimizations…"):
+                prices = get_price_data(tickers, years=LOOKBACK_YEARS)
+                mu, cov, tickers_new = compute_returns_and_cov(prices)
+
+            st.session_state["mu"] = mu
+            st.session_state["cov"] = cov
+            st.session_state["tickers"] = tickers_new
+
+            n = len(tickers_new)
+            ew = equal_weight(n)
+            gmv = gmv_portfolio(cov)
+            ms = max_sharpe_portfolio(mu, cov, RISK_FREE)
+            ms_prof = max_sharpe_with_risk_target(
+                mu, cov, RISK_FREE, risk_target_from_profile(profile)
+            )
+
+            def row(name, w):
+                return {
+                    "Portfolio": name,
+                    "Expected Return": portfolio_return(w, mu),
+                    "Volatility": portfolio_vol(w, cov),
+                    "Sharpe": sharpe_ratio(w, mu, cov, RISK_FREE),
+                    **{f"w_{t}": w[i] for i, t in enumerate(tickers_new)}
+                }
+
+            st.session_state["base_table"] = pd.DataFrame([
+                row("Equal Weight", ew),
+                row("Global Min Variance (GMV)", gmv),
+                row("Max Sharpe", ms),
+                row(f"Profile Max Sharpe ({profile})", ms_prof),
+            ])
+            st.session_state["built_portfolios"] = True
+
+        # Show base portfolios table only (no weight sliders)
+        if (
+            st.session_state.get("built_portfolios", False)
+            and st.session_state["mu"] is not None
+            and st.session_state["cov"] is not None
+            and st.session_state["base_table"] is not None
+        ):
+            base_table = st.session_state["base_table"]
+
+            st.subheader("Base portfolios for this strategy")
+            st.dataframe(
+                base_table.style.format(
+                    {"Expected Return": "{:.2%}",
+                     "Volatility": "{:.2%}",
+                     "Sharpe": "{:.2f}"} |
+                    {c: "{:.1%}" for c in base_table.columns if c.startswith("w_")}
+                )
+            )
+        else:
+            st.info("Click 'Build portfolios for this strategy' to see portfolio options.")
