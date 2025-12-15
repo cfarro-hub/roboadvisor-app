@@ -9,6 +9,27 @@ import datetime as dt
 RISK_FREE = 0.02
 LOOKBACK_YEARS = 5
 
+# ===== Clyde front page =====
+st.set_page_config(
+    page_title="Robo-Advisor Demo",
+    layout="wide"
+)
+
+if "show_intro" not in st.session_state:
+    st.session_state["show_intro"] = True
+
+if st.session_state["show_intro"]:
+    st.title("Clyde – Your Robo‑Advisor")
+    st.markdown("### 🤖 Hi, my name is Clyde.")
+    st.write("I am your robo‑advisor. I will help you build a portfolio tailored to you.")
+    st.write("When you are ready, click the button below to start the questionnaire.")
+
+    if st.button("Please click here"):
+        st.session_state["show_intro"] = False
+        st.rerun()
+
+    st.stop()
+
 DEFAULT_TICKERS = ["SPY", "VEA", "EEM", "AGG", "BNDX", "VNQ", "GLD"]
 # ===== Data + math helpers =====
 def get_price_data(tickers, years=5):
@@ -286,12 +307,7 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
 
 
 # ===== App layout =====
-st.set_page_config(
-    page_title="Robo-Advisor Demo",
-    layout="wide"
-)
-st.title("Robo‑Advisor – Portfolio Strategies")
-
+st.title("Clyde – Portfolio Strategies")
 profile, esg_only = risk_profile_from_answers()
 
 # If the form has not been submitted yet, stop here.
