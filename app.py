@@ -288,8 +288,7 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
 # ===== App layout =====
 st.set_page_config(
     page_title="Robo-Advisor Demo",
-    layout="wide",
-    page_icon="💹"
+    layout="wide"
 )
 st.title("Robo‑Advisor – Portfolio Strategies")
 
