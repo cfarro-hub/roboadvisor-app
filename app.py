@@ -240,110 +240,110 @@ Original file is located at
 #     return " ".joing(msg)
 
 # ===== App layout =====
-st.set_page_config(page_title="Robo-Advisor Demo", layout="wide")
-st.title("Robo‑Advisor – Portfolio Strategies")
+# st.set_page_config(page_title="Robo-Advisor Demo", layout="wide")
+# st.title("Robo‑Advisor – Portfolio Strategies")
+#
+# profile = risk_profile_from_answers()
+#
+# st.header("Step 1 – Strategy options for your profile")
+#
+# candidate_names = strategies_for_profile(profile)
+# cols = st.columns(len(candidate_names))
+#
+# chosen_strategy = st.session_state.get("chosen_strategy", candidate_names[0])
+#
+# for i, name in enumerate(candidate_names):
+#    info = STRATEGIES[name]
+#    with cols[i]:
+#        st.subheader(name)
+#        st.write(info["description"])
+#        if st.button(f"Select {name}", key=f"choose_{name}"):
+#            chosen_strategy = name
+#
+# st.session_state["chosen_strategy"] = chosen_strategy
+#
+# st.markdown(f"### Selected strategy: **{chosen_strategy}**")
+# st.write(STRATEGIES[chosen_strategy]["description"])
+#
+# tickers = STRATEGIES[chosen_strategy]["tickers"]
+# st.write(f"Universe for this strategy: {', '.join(tickers)}")
+#
+# if st.button("Build portfolios for this strategy"):
+#    with st.spinner("Downloading prices and running optimizations…"):
+#        prices = get_price_data(tickers, years=LOOKBACK_YEARS)
+#        mu, cov, tickers = compute_returns_and_cov(prices)
 
-profile = risk_profile_from_answers()
+#    n = len(tickers)
+#    ew = equal_weight(n)
+#    gmv = gmv_portfolio(cov)
+#    ms = max_sharpe_portfolio(mu, cov, RISK_FREE)
+#    ms_prof = max_sharpe_with_risk_target(mu, cov, RISK_FREE,
+#                                          risk_target_from_profile(profile))
+#
+#    def row(name, w):
+#        return {
+#            "Portfolio": name,
+#            "Expected Return": portfolio_return(w, mu),
+#            "Volatility": portfolio_vol(w, cov),
+#            "Sharpe": sharpe_ratio(w, mu, cov, RISK_FREE),
+#            **{f"w_{t}": w[i] for i, t in enumerate(tickers)}
+#        }
 
-st.header("Step 1 – Strategy options for your profile")
+#    base_table = pd.DataFrame([
+#        row("Equal Weight", ew),
+#        row("Global Min Variance (GMV)", gmv),
+#        row("Max Sharpe", ms),
+#        row(f"Profile Max Sharpe ({profile})", ms_prof),
+#    ])
 
-candidate_names = strategies_for_profile(profile)
-cols = st.columns(len(candidate_names))
+#    st.subheader("Step 2 – Base portfolios for this strategy")
+#    st.dataframe(
+#        base_table.style.format(
+#            {"Expected Return": "{:.2%}",
+#             "Volatility": "{:.2%}",
+#             "Sharpe": "{:.2f}"} |
+#            {c: "{:.1%}" for c in base_table.columns if c.startswith("w_")}
+#        )
+#   )
 
-chosen_strategy = st.session_state.get("chosen_strategy", candidate_names[0])
+#    st.subheader("Step 3 – Adjust weights and see the impact")
 
-for i, name in enumerate(candidate_names):
-    info = STRATEGIES[name]
-    with cols[i]:
-        st.subheader(name)
-        st.write(info["description"])
-        if st.button(f"Select {name}", key=f"choose_{name}"):
-            chosen_strategy = name
-
-st.session_state["chosen_strategy"] = chosen_strategy
-
-st.markdown(f"### Selected strategy: **{chosen_strategy}**")
-st.write(STRATEGIES[chosen_strategy]["description"])
-
-tickers = STRATEGIES[chosen_strategy]["tickers"]
-st.write(f"Universe for this strategy: {', '.join(tickers)}")
-
-if st.button("Build portfolios for this strategy"):
-    with st.spinner("Downloading prices and running optimizations…"):
-        prices = get_price_data(tickers, years=LOOKBACK_YEARS)
-        mu, cov, tickers = compute_returns_and_cov(prices)
-
-    n = len(tickers)
-    ew = equal_weight(n)
-    gmv = gmv_portfolio(cov)
-    ms = max_sharpe_portfolio(mu, cov, RISK_FREE)
-    ms_prof = max_sharpe_with_risk_target(mu, cov, RISK_FREE,
-                                          risk_target_from_profile(profile))
-
-    def row(name, w):
-        return {
-            "Portfolio": name,
-            "Expected Return": portfolio_return(w, mu),
-            "Volatility": portfolio_vol(w, cov),
-            "Sharpe": sharpe_ratio(w, mu, cov, RISK_FREE),
-            **{f"w_{t}": w[i] for i, t in enumerate(tickers)}
-        }
-
-    base_table = pd.DataFrame([
-        row("Equal Weight", ew),
-        row("Global Min Variance (GMV)", gmv),
-        row("Max Sharpe", ms),
-        row(f"Profile Max Sharpe ({profile})", ms_prof),
-    ])
-
-    st.subheader("Step 2 – Base portfolios for this strategy")
-    st.dataframe(
-        base_table.style.format(
-            {"Expected Return": "{:.2%}",
-             "Volatility": "{:.2%}",
-             "Sharpe": "{:.2f}"} |
-            {c: "{:.1%}" for c in base_table.columns if c.startswith("w_")}
-        )
-    )
-
-    st.subheader("Step 3 – Adjust weights and see the impact")
-
-    options = list(base_table["Portfolio"])
-    ref_name = st.selectbox("Choose base portfolio", options)
-    base_row = base_table[base_table["Portfolio"] == ref_name].iloc[0]
-    base_sh = base_row["Sharpe"]
-
-    st.write(
-        f"Base {ref_name}: return {base_row['Expected Return']:.2%}, "
-        f"vol {base_row['Volatility']:.2%}, Sharpe {base_sh:.2f}"
-    )
-
-    weight_cols = st.columns(len(tickers))
-    new_w = []
-    for i, t in enumerate(tickers):
-        default_w = float(base_row[f"w_{t}"])
-        with weight_cols[i]:
-            w_pct = st.slider(f"{t} (%)", 0.0, 100.0, default_w * 100.0)
-        new_w.append(w_pct / 100.0)
-
-    if st.button("Evaluate custom portfolio"):
-        w = np.array(new_w)
-        w = w / w.sum() if w.sum() > 0 else equal_weight(len(tickers))
-
-        ret_new = portfolio_return(w, mu)
-        vol_new = portfolio_vol(w, cov)
-        sh_new = sharpe_ratio(w, mu, cov, RISK_FREE)
-
-        st.write("New weights (normalized):")
-        st.dataframe(
-            pd.DataFrame({"Ticker": tickers, "Weight": w}).style.format({"Weight": "{:.1%}"})
-        )
-
-        st.write(
-            f"New portfolio: return {ret_new:.2%}, "
-            f"vol {vol_new:.2%}, Sharpe {sh_new:.2f}"
-        )
-
-        st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sh, profile))
-else:
-    st.info("Click 'Build portfolios for this strategy' to see portfolio options and customize weights.")
+#    options = list(base_table["Portfolio"])
+#    ref_name = st.selectbox("Choose base portfolio", options)
+#    base_row = base_table[base_table["Portfolio"] == ref_name].iloc[0]
+#    base_sh = base_row["Sharpe"]
+#
+#    st.write(
+#        f"Base {ref_name}: return {base_row['Expected Return']:.2%}, "
+#        f"vol {base_row['Volatility']:.2%}, Sharpe {base_sh:.2f}"
+#    )
+#
+#    weight_cols = st.columns(len(tickers))
+#    new_w = []
+#    for i, t in enumerate(tickers):
+#        default_w = float(base_row[f"w_{t}"])
+#        with weight_cols[i]:
+#           w_pct = st.slider(f"{t} (%)", 0.0, 100.0, default_w * 100.0)
+#        new_w.append(w_pct / 100.0)
+#
+#    if st.button("Evaluate custom portfolio"):
+#        w = np.array(new_w)
+#        w = w / w.sum() if w.sum() > 0 else equal_weight(len(tickers))
+#
+#        ret_new = portfolio_return(w, mu)
+#        vol_new = portfolio_vol(w, cov)
+#        sh_new = sharpe_ratio(w, mu, cov, RISK_FREE)
+#
+#        st.write("New weights (normalized):")
+#        st.dataframe(
+#            pd.DataFrame({"Ticker": tickers, "Weight": w}).style.format({"Weight": "{:.1%}"})
+#        )
+#
+#        st.write(
+#            f"New portfolio: return {ret_new:.2%}, "
+#            f"vol {vol_new:.2%}, Sharpe {sh_new:.2f}"
+#        )
+#
+#        st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sh, profile))
+# else:
+#    st.info("Click 'Build portfolios for this strategy' to see portfolio options and customize weights.")
