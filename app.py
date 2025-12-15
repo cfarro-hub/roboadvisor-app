@@ -399,5 +399,3 @@ if (
         st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sh, profile))
 else:
     st.info("Click 'Build portfolios for this strategy' to see portfolio options and customize weights.")
-
-profile, esg_only = risk_profile_from_answers()
