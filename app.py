@@ -161,8 +161,66 @@ def max_sharpe_with_risk_target(mu, cov, rf, max_vol):
 
 # ===== Strategy definitions =====
 STRATEGIES = {
-    "Core": {... your existing entries ...},
-    # keep your existing entries here, including ESG Global Equity, ESG Climate Leaders, ESG Balanced
+    "Core": {
+        "description": "Well-diversified, low-cost, global stock and bond ETFs.",
+        "tickers": ["VTI", "VEA", "VWO", "BND", "BNDX"],
+        "type": "mixed",
+    },
+    "Value Tilt": {
+        "description": "Global portfolio tilted toward undervalued value stocks.",
+        "tickers": ["VTV", "VOE", "VEA", "VBR", "VWO"],
+        "type": "equity-heavy",
+    },
+    "Innovative Technology": {
+        "description": "High-growth sectors: tech, clean energy, semis, robotics, etc.",
+        "tickers": ["QQQ", "ARKK", "ICLN", "SMH", "BOTZ"],
+        "type": "high-risk",
+    },
+    "Broad Impact": {
+        "description": "Broad ESG portfolio screening for environmental and social factors.",
+        "tickers": ["ESGU", "ESGD", "ESGE", "ESGN"],
+        "type": "esg",
+    },
+    "Climate Impact": {
+        "description": "Lower carbon emissions and green-project ETFs.",
+        "tickers": ["CRBN", "ICLN", "TAN", "GRNB"],
+        "type": "esg",
+    },
+    "Cash Reserve": {
+        "description": "Cash-like exposure (short-term Treasuries / money market).",
+        "tickers": ["BIL"],
+        "type": "cash",
+    },
+    "BlackRock Target Income": {
+        "description": "100% bond portfolio targeting income with lower equity risk.",
+        "tickers": ["AGG", "LQD", "HYG"],
+        "type": "bond-only",
+    },
+    "Goldman Sachs Smart Beta": {
+        "description": "Smart beta factor ETFs seeking long-term outperformance.",
+        "tickers": ["GSLC", "GSEW", "QUAL", "MTUM"],
+        "type": "equity-heavy",
+    },
+    "Crypto ETF": {
+        "description": "Exposure to Bitcoin and Ethereum via ETFs.",
+        "tickers": ["IBIT", "FBTC", "ETHE"],
+        "type": "high-risk",
+    },
+    "ESG Global Equity": {
+        "description": "Global stock portfolio using broad ESG‑screened equity ETFs.",
+        "tickers": ["ESGU", "ESGD", "ESGE"],
+        "type": "esg",
+    },
+    "ESG Climate Leaders": {
+        "description": "Climate‑focused ETFs: clean energy, low‑carbon and green bonds.",
+        "tickers": ["ICLN", "CRBN", "TAN", "GRNB"],
+        "type": "esg",
+    },
+    "ESG Balanced": {
+        "description": "Balanced ESG mix of stocks and bonds.",
+        "tickers": ["ESGU", "ESGD", "ESGE", "AGG"],
+        "type": "esg",
+    },
 }
 
 
