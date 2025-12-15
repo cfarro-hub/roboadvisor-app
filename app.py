@@ -222,83 +222,11 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
         msgs.append("Sharpe ratio is lower than the reference: less efficient than the base portfolio.")
     else:
         msgs.append("Sharpe ratio is similar to the reference: change is small in efficiency terms.")
-    if profile == "conservative":
+    if profile == "conservative" and vol > 0.12:
         msg.append("Warning: volatility is high for a conservative profile.")
     if profile == "aggressive" and vol < 0.10:
         msg.append("Note: volatility is low for an aggressive profile; you may be under‑risked.")
     return " ".join(msg)
-# ==== Streamlit app ====
-
-st.title("Multi‑Step Robo‑Advisor (Markowitz / Sharpe)")
-
-st.sidebar.header("Step 1 – Risk questionnaire")
-horizon = st.sidebar.slider("Investment horizon (years)", 1, 30, 10)
-drawdown = st.sidebar.slider("Max loss you tolerate in a year (%)", 5, 50, 20)
-sleep = st.sidebar.radio("If portfolio drops 20%, you…", ["Sell", "Hold", "Buy more"])
-exp = st.sidebar.radio("Experience with investing", ["None", "Some", "Advanced"])
-
-score = 0
-score += 0 if horizon < 3 else (1 if horizon < 7 else 2)
-score += 0 if drawdown < 10 else (1 if drawdown < 25 else 2)
-score += {"Sell": 0, "Hold": 1, "Buy more": 2}[sleep]
-score += {"None": 0, "Some": 1, "Advanced": 2}[exp]
-
-if score <= 2:
-    profile = "conservative"
-elif score <= 5:
-    profile = "balanced"
-else:
-    profile = "aggressive"
-
-st.sidebar.markdown(f"**Inferred profile:** {profile.upper()} (score={score})")
-
-st.sidebar.header("Step 2 – Asset universe")
-tickers_input = st.sidebar.text_input(
-    "Yahoo tickers (comma‑separated)", ",".join(DEFAULT_TICKERS)
-)
-tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip() != ""]
-
-if st.sidebar.button("Build portfolios"):
-    with st.spinner("Downloading data and optimizing portfolios…"):
-        prices = get_price_data(tickers, years=LOOKBACK_YEARS)
-        rets, mu, cov, tickers = compute_returns_and_cov(prices, freq="monthly")
-        port_table = build_portfolio_table(mu, cov, tickers, RISK_FREE, profile=profile)
-
-    st.subheader("Baseline portfolio proposals")
-    st.dataframe(port_table.style.format(
-        {col: "{:.2%}" for col in ["Expected Return", "Volatility"]} |
-        {"Sharpe": "{:.2f}"} |
-        {c: "{:.1%}" for c in port_table.columns if c.startswith("w_")}
-    ))
-
-    # Choose reference portfolio
-    options = list(port_table["Portfolio"])
-    ref_name = st.selectbox("Reference portfolio for experimentation", options)
-    ref_row = port_table[port_table["Portfolio"] == ref_name].iloc[0]
-    base_sharpe = ref_row["Sharpe"]
-
-    st.subheader("Step 3 – Adjust weights and get advice")
-
-    cols = st.columns(len(tickers))
-    new_weights = []
-    for i, t in enumerate(tickers):
-        col = cols[i]
-        default_w = float(ref_row[f"w_{t}"])
-        w = col.slider(f"{t} weight (%)", 0.0, 100.0, float(default_w * 100.0))
-        new_weights.append(w / 100.0)
-
-    if st.button("Evaluate new portfolio"):
-        ret_new, vol_new, sh_new, detail_df = evaluate_custom_weights(
-            new_weights, mu, cov, tickers, rf=RISK_FREE
-        )
-        st.write("New weights (normalized):")
-        st.dataframe(detail_df.style.format({"Weight": "{:.1%}"}))
-
-        st.write(
-            f"**New portfolio metrics** – Return ≈ {ret_new:.2%}, Volatility ≈ {vol_new:.2%}, "
-            f"Sharpe ≈ {sh_new:.2f}"
-        )
-        st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sharpe, profile=profile))
 # ===== App layout =====
 st.set_page_config(page_title="Robo-Advisor Demo", layout="wide")
 st.title("Robo‑Advisor – Portfolio Strategies")
