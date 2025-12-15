@@ -12,6 +12,25 @@ LOOKBACK_YEARS = 5
 # ===== Page setup =====
 st.set_page_config(page_title="Clyde – Robo‑Advisor", layout="wide")
 
+# Global CSS for layout and questionnaire spacing
+st.markdown(
+    """
+    <style>
+    /* Narrow the main content width for a more article-like feel */
+    .block-container {
+        max-width: 900px;
+        padding-top: 1.5rem;
+        padding-bottom: 2rem;
+    }
+    /* Tighter spacing between form widgets */
+    form div[data-baseweb="base-input"] {
+        margin-bottom: 0.25rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Track where user is: "landing" or "app"
 if "page" not in st.session_state:
     st.session_state["page"] = "landing"
@@ -155,43 +174,47 @@ def max_sharpe_portfolio(mu, cov, rf=RISK_FREE):
 
 # ===== Risk profiling =====
 def risk_profile_from_answers():
-    st.header("Tell us about you")
+    st.markdown("### Step 1 · Tell us about yourself")
 
     with st.form("risk_form"):
-        col1, col2 = st.columns(2)
+        # One main column so questions are stacked vertically
+        st.markdown("#### Time horizon and risk")
 
-        with col1:
-            horizon = st.slider("Investment horizon (years)", 1, 30, 10)
-            drawdown = st.slider("Max loss in one year you tolerate (%)", 5, 50, 20)
-            esg_pref = st.radio(
-                "How important is ESG to you?",
-                ["No", "Yes"],
-                horizontal=True,
-            )
+        horizon = st.slider("Investment horizon (years)", 1, 30, 10)
+        drawdown = st.slider("Maximum loss in one year you can tolerate (%)", 5, 50, 20)
 
-        with col2:
-            income_stability = st.radio(
-                "Income stability",
-                ["Unstable", "Somewhat stable", "Very stable"]
-            )
-            emergency = st.radio(
-                "Emergency fund (3–6 months saved)?",
-                ["No", "Yes"]
-            )
-            goal = st.radio(
-                "Main goal",
-                ["Capital preservation", "Balanced growth", "Aggressive growth"]
-            )
-            behav = st.radio(
-                "If portfolio drops 20%, you…",
-                ["Sell everything", "Hold", "Buy more"]
-            )
-            exp = st.radio(
-                "Experience with investing",
-                ["None", "Some", "Advanced"]
-            )
+        st.markdown("#### Your situation")
 
-        submitted = st.form_submit_button("Continue to portfolios")
+        income_stability = st.radio(
+            "How stable is your income?",
+            ["Unstable", "Somewhat stable", "Very stable"],
+        )
+        emergency = st.radio(
+            "Do you have an emergency fund (3–6 months of expenses)?",
+            ["No", "Yes"],
+        )
+        exp = st.radio(
+            "How experienced are you with investing?",
+            ["None", "Some", "Advanced"],
+        )
+
+        st.markdown("#### Goals and preferences")
+
+        goal = st.radio(
+            "What is your main goal?",
+            ["Capital preservation", "Balanced growth", "Aggressive growth"],
+        )
+        behav = st.radio(
+            "If your portfolio dropped 20%, what would you most likely do?",
+            ["Sell everything", "Hold", "Buy more"],
+        )
+        esg_pref = st.radio(
+            "Do you prefer ESG‑focused investments only?",
+            ["No", "Yes"],
+            horizontal=True,
+        )
+
+        submitted = st.form_submit_button("Continue to portfolio suggestions")
 
     if not submitted:
         return None, None
