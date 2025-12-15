@@ -83,7 +83,6 @@ def max_sharpe_portfolio(mu, cov, rf=RISK_FREE):
 
 
 # ===== Risk profiling =====
-# ===== Risk profiling =====
 def risk_profile_from_answers():
     st.sidebar.subheader("Risk questionnaire")
 
@@ -136,7 +135,6 @@ def risk_profile_from_answers():
 
     esg_only = (esg_pref == "Yes")
     return profile, esg_only
-
 
 def risk_target_from_profile(profile):
     if profile == "conservative":
