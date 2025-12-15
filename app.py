@@ -18,7 +18,12 @@ if "page" not in st.session_state:
 
 def go_to_app():
     st.session_state["page"] = "app"
-
+def reset_profile():
+    for key in ["profile", "esg_only", "mu", "cov", "tickers",
+                "base_table", "built_portfolios", "chosen_strategy"]:
+        if key in st.session_state:
+            del st.session_state[key]
+            
 # ===== Landing page =====
 if st.session_state["page"] == "landing":
     # Hero section
@@ -363,6 +368,9 @@ if st.session_state["page"] == "app":
 
     st.title("Portfolio strategies for you")
 
+    # Button to go back and redo questionnaire
+    if st.button("Change my answers / risk profile"):
+        reset_profile()
     # Only ask questionnaire if we do not already have profile
     if "profile" not in st.session_state or "esg_only" not in st.session_state:
         profile, esg_only = risk_profile_from_answers()
