@@ -7,10 +7,8 @@ Original file is located at
     https://colab.research.google.com/drive/16NVP9eL1F2JYKX24rK69cHIpQG9iLDn7
 """
 
-!pip install -q streamlit yfinance pandas numpy scipy
 
 # Commented out IPython magic to ensure Python compatibility.
-# %%writefile app.py
 # import streamlit as st
 # import numpy as np
 # import pandas as pd
