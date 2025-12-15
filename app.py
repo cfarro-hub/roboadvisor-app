@@ -109,6 +109,11 @@ def risk_profile_from_answers():
     exp = st.sidebar.radio(
         "Experience with investing",
         ["None", "Some", "Advanced"]
+    
+    )
+    esg_pref = st.sidebar.radio(
+        "How important is ESG to you?",
+        ["No", "Yes"]
     )
 
     score = 0
@@ -128,7 +133,7 @@ def risk_profile_from_answers():
         profile = "aggressive"
 
     st.sidebar.markdown(f"**Inferred risk profile:** {profile.upper()} (score={score})")
-    return profile
+    return profile, esg_pref == "Yes"
 
 
 def risk_target_from_profile(profile):
@@ -204,7 +209,10 @@ STRATEGIES = {
 }
 
 
-def strategies_for_profile(profile):
+def strategies_for_profile(profile, esg_only: bool):
+
+    esg_names = {"Broad Impact","Climate Impact","Cash Reserve","BlackRock Target Income"}
+    
     if profile == "conservative":
         return ["Core", "Broad Impact", "Climate Impact", "BlackRock Target Income", "Cash Reserve"]
     elif profile == "balanced":
@@ -212,6 +220,9 @@ def strategies_for_profile(profile):
     else:
         return ["Core", "Value Tilt", "Innovative Technology", "Goldman Sachs Smart Beta", "Crypto ETF"]
 
+    if esg_only:
+        base = [name for name in base if name in esg_names]
+    return base
 
 def roboadvisor_comment(ret, vol, sh, base_sh, profile):
     msgs = []
@@ -232,7 +243,7 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
 st.set_page_config(page_title="Robo-Advisor Demo", layout="wide")
 st.title("Robo‑Advisor – Portfolio Strategies")
 
-profile = risk_profile_from_answers()
+profile, esg_only = risk_profile_from_answers()
 
 # Initialize session state containers once
 if "mu" not in st.session_state:
