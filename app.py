@@ -209,7 +209,7 @@ STRATEGIES = {
 }
 
 
-def strategies_for_profile(profile, esg_only: bool):
+def strategies_for_profile(profile):
 
     esg_names = {"Broad Impact","Climate Impact","Cash Reserve","BlackRock Target Income"}
     
