@@ -233,6 +233,14 @@ st.title("Robo‑Advisor – Portfolio Strategies")
 
 profile = risk_profile_from_answers()
 
+# Initialize session state containers once
+if "mu" not in st.session_state:
+    st.session_state["mu"] = None
+    st.session_state["cov"] = None
+    st.session_state["tickers"] = None
+    st.session_state["base_table"] = None
+
+
 st.header("Step 1 – Strategy options for your profile")
 
 candidate_names = strategies_for_profile(profile)
@@ -291,14 +299,14 @@ if st.button("Build portfolios for this strategy"):
 
 # 2) if we have saved data, always show the sliders and evaluate
 if (
-    st.session_state.mu is not None
-    and st.session_state.cov is not None
-    and st.session_state.base_table is not None
+    st.session_state["mu"] is not None
+    and st.session_state["cov"] is not None
+    and st.session_state["base_table"] is not None
 ):
-    mu = st.session_state.mu
-    cov = st.session_state.cov
-    tickers = st.session_state.tickers
-    base_table = st.session_state.base_table
+    mu = st.session_state["mu"]
+    cov = st.session_state["cov"]
+    tickers = st.session_state["tickers"]
+    base_table = st.session_state["base_table"]
 
     st.subheader("Step 2 – Base portfolios for this strategy")
     st.dataframe(
