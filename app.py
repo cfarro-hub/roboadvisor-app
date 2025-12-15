@@ -373,6 +373,7 @@ with st.expander("View recommended portfolios", expanded=True):
         st.session_state["mu"] = mu
         st.session_state["cov"] = cov
         st.session_state["tickers"] = tickers_new
+        st.session_state["built_portfolios"]=True
 
         n = len(tickers_new)
         ew = equal_weight(n)
@@ -399,9 +400,10 @@ with st.expander("View recommended portfolios", expanded=True):
 
     # 2) if we have saved data, always show the sliders and evaluate
     if (
-        st.session_state["mu"] is not None
-        and st.session_state["cov"] is not None
-        and st.session_state["base_table"] is not None
+    st.session_state.get("built_portfolios", False)
+    and st.session_state["mu"] is not None
+    and st.session_state["cov"] is not None
+    and st.session_state["base_table"] is not None
     ):
         mu = st.session_state["mu"]
         cov = st.session_state["cov"]
