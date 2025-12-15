@@ -256,12 +256,17 @@ st.write(STRATEGIES[chosen_strategy]["description"])
 tickers = STRATEGIES[chosen_strategy]["tickers"]
 st.write(f"Universe for this strategy: {', '.join(tickers)}")
 
+# 1) build / rebuild portfolios when button is clicked
 if st.button("Build portfolios for this strategy"):
     with st.spinner("Downloading prices and running optimizations…"):
         prices = get_price_data(tickers, years=LOOKBACK_YEARS)
-        mu, cov, tickers = compute_returns_and_cov(prices)
+        mu, cov, tickers_new = compute_returns_and_cov(prices)
+    # store in session_state so we keep them across reruns
+    st.session_state.mu = mu
+    st.session_state.cov = cov
+    st.session_state.tickers = tickers_new
 
-    n = len(tickers)
+    n = len(tickers_new)
     ew = equal_weight(n)
     gmv = gmv_portfolio(cov)
     ms = max_sharpe_portfolio(mu, cov, RISK_FREE)
@@ -274,15 +279,26 @@ if st.button("Build portfolios for this strategy"):
             "Expected Return": portfolio_return(w, mu),
             "Volatility": portfolio_vol(w, cov),
             "Sharpe": sharpe_ratio(w, mu, cov, RISK_FREE),
-            **{f"w_{t}": w[i] for i, t in enumerate(tickers)}
+            **{f"w_{t}": w[i] for i, t in enumerate(tickers_new)}
         }
 
-    base_table = pd.DataFrame([
+    st.session_state.base_table = pd.DataFrame([
         row("Equal Weight", ew),
         row("Global Min Variance (GMV)", gmv),
         row("Max Sharpe", ms),
         row(f"Profile Max Sharpe ({profile})", ms_prof),
     ])
+
+# 2) if we have saved data, always show the sliders and evaluate
+if (
+    st.session_state.mu is not None
+    and st.session_state.cov is not None
+    and st.session_state.base_table is not None
+):
+    mu = st.session_state.mu
+    cov = st.session_state.cov
+    tickers = st.session_state.tickers
+    base_table = st.session_state.base_table
 
     st.subheader("Step 2 – Base portfolios for this strategy")
     st.dataframe(
@@ -333,5 +349,5 @@ if st.button("Build portfolios for this strategy"):
         )
 
         st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sh, profile))
-    else:
-        st.info("Click 'Build portfolios for this strategy' to see portfolio options and customize weights.")
+else:
+    st.info("Click 'Build portfolios for this strategy' to see portfolio options and customize weights.")
