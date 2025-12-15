@@ -123,7 +123,7 @@ def max_sharpe_portfolio(mu, cov, rf=RISK_FREE):
 
 # ===== Risk profiling =====
 def risk_profile_from_answers():
-    st.header("Step 1 – Tell us about you")
+    st.header("Tell us about you")
 
     with st.form("risk_form"):
         col1, col2 = st.columns(2)
@@ -418,7 +418,7 @@ with st.expander("View recommended portfolios", expanded=True):
         tickers = st.session_state["tickers"]
         base_table = st.session_state["base_table"]
 
-        st.subheader("Step 2 – Base portfolios for this strategy")
+        st.subheader("Base portfolios for this strategy")
         st.dataframe(
             base_table.style.format(
                 {"Expected Return": "{:.2%}",
@@ -428,7 +428,7 @@ with st.expander("View recommended portfolios", expanded=True):
             )
         )
 
-        st.subheader("Step 3 – Adjust weights and see the impact")
+        st.subheader("Adjust weights and see the impact")
 
         options = list(base_table["Portfolio"])
         ref_name = st.selectbox("Choose base portfolio", options)
