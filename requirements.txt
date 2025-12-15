@@ -1,5 +1,5 @@
-# streamlit
-# yfinance
-# pandas
-# numpy
-# scipy
+streamlit
+yfinance
+pandas
+numpy
+scipy
