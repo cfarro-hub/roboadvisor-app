@@ -115,6 +115,8 @@ def risk_profile_from_answers():
         "How important is ESG to you?",
         ["No", "Yes"]
     )
+    st.sidebar.markdown(f"**Inferred risk profile:** {profile.upper()} (score={score})")
+    return profile, esg_pref == "Yes"
 
     score = 0
     score += 0 if horizon < 3 else (1 if horizon < 7 else 2)
@@ -181,11 +183,6 @@ STRATEGIES = {
         "tickers": ["ESGU", "ESGD", "ESGE", "ESGN"],
         "type": "mixed",
     },
-    "Climate Impact": {
-        "description": "Lower carbon emissions and green-project ETFs.",
-        "tickers": ["CRBN", "ICLN", "TAN", "GRNB"],
-        "type": "mixed",
-    },
     "Cash Reserve": {
         "description": "Cash-like exposure (short-term Treasuries / money market).",
         "tickers": ["BIL"],
@@ -206,19 +203,60 @@ STRATEGIES = {
         "tickers": ["IBIT", "FBTC", "ETHE"],
         "type": "high-risk",
     },
+    "ESG Global Equity": {
+        "description": "Global stock portfolio using broad ESG‑screened equity ETFs.",
+        "tickers": ["ESGU", "ESGD", "ESGE"],
+        "type": "esg",
+    },
+    "ESG Climate Leaders": {
+        "description": "Climate‑focused ETFs: clean energy, low‑carbon and green bonds.",
+        "tickers": ["ICLN", "CRBN", "TAN", "GRNB"],
+        "type": "esg",
+    },
+    "ESG Balanced": {
+        "description": "Balanced ESG mix of stocks and bonds.",
+        "tickers": ["ESGU", "ESGD", "ESGE", "AGG"],
+        "type": "esg",
+    },
 }
 
 
-def strategies_for_profile(profile):
+def strategies_for_profile(profile, esg_only: bool):
+    """
+    If esg_only is True: show only explicitly green / ESG strategies.
+    If esg_only is False: show only non‑ESG strategies (no ESG‑labelled ideas).
+    """
+    esg_strats = [
+        "Broad Impact",
+        "Climate Impact",
+        "ESG Global Equity",
+        "ESG Climate Leaders",
+        "ESG Balanced",
+    ]
 
-    esg_names = {"Broad Impact","Climate Impact","Cash Reserve","BlackRock Target Income"}
-    
-    if profile == "conservative":
-        return ["Core", "Broad Impact", "Climate Impact", "BlackRock Target Income", "Cash Reserve"]
-    elif profile == "balanced":
-        return ["Core", "Value Tilt", "Broad Impact", "Climate Impact", "BlackRock Target Income"]
+    non_esg_strats = [
+        "Core",
+        "Value Tilt",
+        "Innovative Technology",
+        "Cash Reserve",
+        "BlackRock Target Income",
+        "Goldman Sachs Smart Beta",
+        "Crypto ETF",
+    ]
+
+    if esg_only:
+        # Only green / ESG strategies
+        base = esg_strats
     else:
-        return ["Core", "Value Tilt", "Innovative Technology", "Goldman Sachs Smart Beta", "Crypto ETF"]
+        # No ESG ideas at all
+        base = non_esg_strats
+
+    # Optionally tailor by risk profile
+    if profile == "conservative":
+        # drop highest‑risk ideas for conservative users
+        base = [s for s in base if s not in ["Innovative Technology", "Crypto ETF"]]
+
+    return base
 
 
 def roboadvisor_comment(ret, vol, sh, base_sh, profile):
@@ -240,7 +278,11 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
 st.set_page_config(page_title="Robo-Advisor Demo", layout="wide")
 st.title("Robo‑Advisor – Portfolio Strategies")
 
-profile = risk_profile_from_answers()
+profile, esg_only = risk_profile_from_answers()
+
+st.header("Step 1 – Strategy options for your profile")
+
+candidate_names = strategies_for_profile(profile, esg_only)
 
 # Initialize session state containers once
 if "mu" not in st.session_state:
