@@ -39,9 +39,9 @@ if st.session_state["show_intro"]:
     st.stop()  # stop app while on intro page
 
 # Mini Clyde header (shown on all pages after intro)
-header_col1, header_col2 = st.columns([0.1, 0.9])
+header_col1, header_col2 = st.columns([0.9, 0.1])
 with header_col1:
-    st.image("clyde.png", width=45)
+    st.image("clyde.png", width=50)
 
 # flag to remember if portfolios were built
 if "built_portfolios" not in st.session_state:
