@@ -20,7 +20,13 @@ if "show_intro" not in st.session_state:
 
 if st.session_state["show_intro"]:
     st.title("Clyde – Your Robo‑Advisor")
-    st.markdown("### 🤖 Hi, my name is Clyde.")
+
+    # Center Clyde image
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("clyde.png", use_column_width=True)
+
+    st.markdown("Hi, my name is Clyde.")
     st.write("I am your robo‑advisor. I will help you build a portfolio tailored to you.")
     st.write("When you are ready, click the button below to start the questionnaire.")
 
