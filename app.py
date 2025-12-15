@@ -84,37 +84,48 @@ def max_sharpe_portfolio(mu, cov, rf=RISK_FREE):
 
 # ===== Risk profiling =====
 def risk_profile_from_answers():
-    st.sidebar.subheader("Risk questionnaire")
+    st.header("Step 1 – Tell us about you")
 
-    horizon = st.sidebar.slider("Investment horizon (years)", 1, 30, 10)
-    income_stability = st.sidebar.radio(
-        "Income stability",
-        ["Unstable", "Somewhat stable", "Very stable"]
-    )
-    emergency = st.sidebar.radio(
-        "Emergency fund (3–6 months saved)?",
-        ["No", "Yes"]
-    )
-    goal = st.sidebar.radio(
-        "Main goal",
-        ["Capital preservation", "Balanced growth", "Aggressive growth"]
-    )
-    drawdown = st.sidebar.slider(
-        "Max loss in one year you tolerate (%)", 5, 50, 20
-    )
-    behav = st.sidebar.radio(
-        "If portfolio drops 20%, you…",
-        ["Sell everything", "Hold", "Buy more"]
-    )
-    exp = st.sidebar.radio(
-        "Experience with investing",
-        ["None", "Some", "Advanced"]
-    )
-    esg_pref = st.sidebar.radio(
-        "How important is ESG to you?",
-        ["No", "Yes"]
-    )
+    with st.form("risk_form"):
+        col1, col2 = st.columns(2)
 
+        with col1:
+            horizon = st.slider("Investment horizon (years)", 1, 30, 10)
+            drawdown = st.slider("Max loss in one year you tolerate (%)", 5, 50, 20)
+            esg_pref = st.radio(
+                "How important is ESG to you?",
+                ["No", "Yes"],
+                horizontal=True,
+            )
+
+        with col2:
+            income_stability = st.radio(
+                "Income stability",
+                ["Unstable", "Somewhat stable", "Very stable"]
+            )
+            emergency = st.radio(
+                "Emergency fund (3–6 months saved)?",
+                ["No", "Yes"]
+            )
+            goal = st.radio(
+                "Main goal",
+                ["Capital preservation", "Balanced growth", "Aggressive growth"]
+            )
+            behav = st.radio(
+                "If portfolio drops 20%, you…",
+                ["Sell everything", "Hold", "Buy more"]
+            )
+            exp = st.radio(
+                "Experience with investing",
+                ["None", "Some", "Advanced"]
+            )
+
+        submitted = st.form_submit_button("Continue to portfolios")
+
+    if not submitted:
+        return None, None  # user has not completed the form yet
+
+    # scoring logic as before
     score = 0
     score += 0 if horizon < 3 else (1 if horizon < 7 else 2)
     score += {"Unstable": 0, "Somewhat stable": 1, "Very stable": 2}[income_stability]
@@ -131,9 +142,14 @@ def risk_profile_from_answers():
     else:
         profile = "aggressive"
 
-    st.sidebar.markdown(f"**Inferred risk profile:** {profile.upper()} (score={score})")
-
     esg_only = (esg_pref == "Yes")
+
+    st.success(f"Inferred risk profile: {profile.upper()} (score={score})")
+
+    # remember choices in session_state
+    st.session_state["profile"] = profile
+    st.session_state["esg_only"] = esg_only
+
     return profile, esg_only
 
 def risk_target_from_profile(profile):
@@ -270,12 +286,25 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
 
 
 # ===== App layout =====
-st.set_page_config(page_title="Robo-Advisor Demo", layout="wide")
+st.set_page_config(
+    page_title="Robo-Advisor Demo",
+    layout="wide",
+    page_icon="💹"
+)
 st.title("Robo‑Advisor – Portfolio Strategies")
 
 profile, esg_only = risk_profile_from_answers()
 
-st.header("Step 1 – Strategy options for your profile")
+# If the form has not been submitted yet, stop here.
+if profile is None:
+    st.info("Fill in the questionnaire above to see portfolio strategies tailored to you.")
+    st.stop()
+
+st.markdown("---")
+
+with st.expander("View recommended portfolios", expanded=True):
+st.header("Step 2 – Strategy options for your profile")
+
 candidate_names = strategies_for_profile(profile, esg_only)
 
 # Initialize session state containers once
@@ -291,7 +320,8 @@ chosen_strategy = st.session_state.get("chosen_strategy", candidate_names[0])
 for i, name in enumerate(candidate_names):
     info = STRATEGIES[name]
     with cols[i]:
-        st.subheader(name)
+        label = name + " 🌱" if info["type"] == "esg" else name
+        st.subheader(label)
         st.write(info["description"])
         if st.button(f"Select {name}", key=f"choose_{name}"):
             chosen_strategy = name
