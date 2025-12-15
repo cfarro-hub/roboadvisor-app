@@ -455,6 +455,9 @@ if st.session_state["page"] == "app":
             and st.session_state["cov"] is not None
             and st.session_state["base_table"] is not None
         ):
+            mu = st.session_state["mu"]
+            cov = st.session_state["cov"]
+            tickers = st.session_state["tickers"]
             base_table = st.session_state["base_table"]
 
             st.subheader("Base portfolios for this strategy")
@@ -466,5 +469,52 @@ if st.session_state["page"] == "app":
                     {c: "{:.1%}" for c in base_table.columns if c.startswith("w_")}
                 )
             )
+            st.subheader("Adjust weights and see the impact")
+
+            options = list(base_table["Portfolio"])
+            ref_name = st.selectbox("Choose base portfolio", options)
+            base_row = base_table[base_table["Portfolio"] == ref_name].iloc[0]
+            base_sh = base_row["Sharpe"]
+
+            st.write(
+                f"Base {ref_name}: return {base_row['Expected Return']:.2%}, "
+                f"vol {base_row['Volatility']:.2%}, Sharpe {base_sh:.2f}"
+            )
+
+    # Sliders in percent; will be normalized to sum 100%
+            weight_cols = st.columns(len(tickers))
+            raw_weights = []
+            for i, t in enumerate(tickers):
+                default_w = float(base_row[f"w_{t}"]) * 100.0  # percent
+                with weight_cols[i]:
+                    w_pct = st.slider(f"{t} (%)", 0.0, 100.0, default_w)
+                raw_weights.append(w_pct)
+
+            if st.button("Evaluate custom portfolio"):
+                raw = np.array(raw_weights)
+
+        # If user sets all zeros, fall back to equal weight
+                if raw.sum() == 0:
+                    w = equal_weight(len(tickers))
+                else:
+            # Normalize so total is exactly 100%
+                    w = raw / raw.sum()  # now sums to 1.0
+
+                ret_new = portfolio_return(w, mu)
+                vol_new = portfolio_vol(w, cov)
+                sh_new = sharpe_ratio(w, mu, cov, RISK_FREE)
+
+                st.write("New weights (normalized to 100%):")
+                st.dataframe(
+                    pd.DataFrame({"Ticker": tickers, "Weight": w}).style.format({"Weight": "{:.1%}"})
+                )
+
+                st.write(
+                    f"New portfolio: return {ret_new:.2%}, "
+                    f"vol {vol_new:.2%}, Sharpe {sh_new:.2f}"
+                )
+
+                st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sh, profile))
+
         else:
             st.info("Click 'Build portfolios for this strategy' to see portfolio options.")
