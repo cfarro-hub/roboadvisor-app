@@ -14,32 +14,36 @@ st.set_page_config(
     page_title="Robo-Advisor Demo",
     layout="wide"
 )
-header_col1, header_col2 = st.columns([0.1, 0.9])
-with header_col1:
-    st.image("clyde.png", width=60)   # small Clyde
-with header_col2:
-    st.markdown("### Clyde – Your Robo‑Advisor")
-    
+
+# Track whether user is still on intro page
 if "show_intro" not in st.session_state:
     st.session_state["show_intro"] = True
 
+# Intro page with big Clyde
 if st.session_state["show_intro"]:
     st.title("Clyde – Your Robo‑Advisor")
 
-    # Center Clyde image
+    # Big Clyde image centered
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("clyde.png", width=250)
+        st.image("clyde.png", width=300)  # adjust size as you like
 
-    st.markdown("Hi, my name is Clyde.")
+    st.markdown("### 🤖 Hi, my name is Clyde.")
     st.write("I am your robo‑advisor. I will help you build a portfolio tailored to you.")
     st.write("When you are ready, click the button below to start the questionnaire.")
 
     if st.button("Please click here"):
         st.session_state["show_intro"] = False
-        st.rerun()
+        st.rerun()  # go to main app
 
-    st.stop()
+    st.stop()  # do not run rest of app while on intro page
+
+# Mini Clyde header (shown on all pages after intro)
+header_col1, header_col2 = st.columns([0.1, 0.9])
+with header_col1:
+    st.image("clyde.png", width=60)   # small Clyde at top
+with header_col2:
+    st.markdown("### Clyde – Your Robo‑Advisor")
 
 DEFAULT_TICKERS = ["SPY", "VEA", "EEM", "AGG", "BNDX", "VNQ", "GLD"]
 # ===== Data + math helpers =====
