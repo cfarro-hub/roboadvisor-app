@@ -174,7 +174,7 @@ def max_sharpe_portfolio(mu, cov, rf=RISK_FREE):
 
 # ===== Risk profiling =====
 def risk_profile_from_answers():
-    st.markdown("### Step 1 · Tell us about yourself")
+    st.markdown("Tell us about yourself")
 
     with st.form("risk_form"):
         # One main column so questions are stacked vertically
