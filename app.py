@@ -4,7 +4,7 @@ import pandas as pd
 import yfinance as yf
 from scipy.optimize import minimize
 import datetime as dt
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 # ===== Global config =====
 RISK_FREE = 0.02
@@ -692,59 +692,55 @@ if st.session_state["page"] == "app":
 
                 st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sh, profile))
 
-                # === Efficient frontier chart ===
+               # === Efficient frontier chart (Plotly) ===
                 vols, rets = efficient_frontier(mu, cov, rf=RISK_FREE, n_points=150)
 
-                fig, ax = plt.subplots(figsize=(7, 4))
+                # Convert to percent for display (like your JS example)
+                x_frontier = vols * 100
+                y_frontier = rets * 100
+                x_base = [base_row["Volatility"] * 100]
+                y_base = [base_row["Expected Return"] * 100]
+                x_port = [vol_new * 100]
+                y_port = [ret_new * 100]
 
-                # Frontier line
-                ax.plot(
-                    vols, rets,
-                    color="#2563EB",
-                    linewidth=2.5,
-                    label="Efficient Frontier",
+                trace1 = go.Scatter(
+                    x=x_frontier,
+                    y=y_frontier,
+                    mode="lines",
+                    name="Efficient Frontier",
+                    line=dict(color="#667eea", width=3),
                 )
 
-                # Max Sharpe (base) point
-                ax.scatter(
-                    base_row["Volatility"], base_row["Expected Return"],
-                    color="green",
-                    edgecolor="white",
-                    s=80,
-                    zorder=3,
-                    label=f"Max Sharpe",
+                trace2 = go.Scatter(
+                    x=x_base,
+                    y=y_base,
+                    mode="markers",
+                    name="Max Sharpe",
+                    marker=dict(size=12, color="green"),
                 )
-
-                # Your custom portfolio
-                ax.scatter(
-                    vol_new, ret_new,
-                    color="red",
-                    edgecolor="white",
-                    s=90,
-                    zorder=4,
-                    label="Your Portfolio",
+                
+                trace3 = go.Scatter(
+                    x=x_port,
+                    y=y_port,
+                    mode="markers",
+                    name="Your Portfolio",
+                    marker=dict(size=12, color="red"),
                 )
+                
+                layout = go.Layout(
+                    title="Efficient Frontier",
+                    xaxis=dict(title="Volatility (%)"),
+                    yaxis=dict(title="Return (%)"),
+                    plot_bgcolor="#f8f9fa",
+                    paper_bgcolor="white",
+                    height=400,
+                    margin=dict(l=60, r=20, b=60, t=40),
+                )
+                
+                fig = go.Figure(data=[trace1, trace2, trace3], layout=layout)
+                
+                st.plotly_chart(fig, use_container_width=True)
 
-                ax.set_title("Efficient Frontier", fontsize=16, pad=10)
-                ax.set_xlabel("Volatility (%)", fontsize=12)
-                ax.set_ylabel("Return (%)", fontsize=12)
-
-                # Format axes as percentages
-                ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*100:.0f}%"))
-                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y*100:.0f}%"))
-
-                # Optional: gentle fixed limits so frame looks similar each time
-                ax.set_xlim(0.03, 0.25)
-                ax.set_ylim(0.00, 0.20)
-
-                # Lighter grid
-                ax.grid(True, which="both", linestyle="--", alpha=0.3)
-
-                # Legend outside on the right
-                ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), frameon=False)
-
-                plt.tight_layout()
-                st.pyplot(fig)
 
         else:
             st.info("Click 'Build portfolios for this strategy' to see portfolio options.")
