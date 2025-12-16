@@ -541,11 +541,6 @@ if st.session_state["page"] == "app":
               
             st.subheader("Adjust weights and see the impact")
 
-            options = list(base_table["Portfolio"])
-            ref_name = st.selectbox("Choose base portfolio", options)
-            base_row = base_table[base_table["Portfolio"] == ref_name].iloc[0]
-            base_sh = base_row["Sharpe"]
-
             st.write(
                 f"Base {ref_name}: return {base_row['Expected Return']:.2%}, "
                 f"vol {base_row['Volatility']:.2%}, Sharpe {base_sh:.2f}"
