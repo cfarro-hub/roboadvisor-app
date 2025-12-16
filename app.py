@@ -22,11 +22,11 @@ st.markdown(
         padding-top: 3.5rem;
         padding-bottom: 2rem;
     }
-    div[data-testid="stContainer"][class*"st-emotion-cache"][style*="border]{
+    div[data-testid="stContainer"][class*="st-emotion-cache"][style*="border"]{
         border-radius: 1rem;
         border: 1px solid #0E9F6E;
-        background: linear-gradient(135deg, #ECFDF,#FFFFFF);
-        box-shadow: 0 10px 25px rgba(14, 159, 110, 0,12);
+        background: linear-gradient(135deg, #ECFDF5,#FFFFFF);
+        box-shadow: 0 10px 25px rgba(14, 159, 110, 0.12);
         padding: 1.1rem 1.4rem;
         margin-bottom: 1.25rem;
     }
@@ -42,14 +42,23 @@ st.markdown(
 if "page" not in st.session_state:
     st.session_state["page"] = "landing"
 
+
 def go_to_app():
     st.session_state["page"] = "app"
+
+
+def go_to_landing():
+    st.session_state["page"] = "landing"
+
+
 def reset_profile():
     for key in ["profile", "esg_only", "mu", "cov", "tickers",
-                "base_table", "built_portfolios", "chosen_strategy"]:
+                "base_table", "built_portfolios", "chosen_strategy",
+                "invest_amount"]:
         if key in st.session_state:
             del st.session_state[key]
-            
+
+
 # ===== Landing page =====
 if st.session_state["page"] == "landing":
     # Hero section
@@ -178,21 +187,35 @@ def max_sharpe_portfolio(mu, cov, rf=RISK_FREE):
     res = minimize(obj, x0, method="SLSQP", bounds=bounds, constraints=cons)
     return res.x
 
-def efficient_frontier(mu,cov,rf=RISK_FREE, n_points=50):
+
+def max_sharpe_with_risk_target(mu, cov, rf, max_vol):
     n = len(mu)
+    x0 = equal_weight(n)
+    bounds = [(0, 1)] * n
+    cons = [
+        {"type": "eq", "fun": lambda w: np.sum(w) - 1},
+        {"type": "ineq", "fun": lambda w: max_vol - portfolio_vol(w, cov)},
+    ]
+    def obj(w): return -sharpe_ratio(w, mu, cov, rf)
+    res = minimize(obj, x0, method="SLSQP", bounds=bounds, constraints=cons)
+    return res.x
+
+
+def efficient_frontier(mu, cov, rf=RISK_FREE, n_points=150):
     vols = []
     rets = []
 
     w_gmv = gmv_portfolio(cov)
-    min_vol=portfolio_vol(w_gmv,cov)
-    max_vol=min_vol*3
+    min_vol = portfolio_vol(w_gmv, cov)
+    max_vol = min_vol * 3
 
-    for target_vol in np.linspace(min_vol,max_vol,n_points):
-        w=max_sharpe_with_risk_target(mu,cov,rf,target_vol)
-        vols.append(portfolio_vol(w,cov))
-        rets.append(portfolio_return(w,mu))
+    for target_vol in np.linspace(min_vol, max_vol, n_points):
+        w = max_sharpe_with_risk_target(mu, cov, rf, target_vol)
+        vols.append(portfolio_vol(w, cov))
+        rets.append(portfolio_return(w, mu))
 
-    return np.array(vols),np.array(rets)
+    return np.array(vols), np.array(rets)
+
 
 # ===== Risk profiling =====
 def risk_profile_from_answers():
@@ -275,19 +298,6 @@ def risk_target_from_profile(profile):
     elif profile == "aggressive":
         return 0.25
     return 0.15
-
-
-def max_sharpe_with_risk_target(mu, cov, rf, max_vol):
-    n = len(mu)
-    x0 = equal_weight(n)
-    bounds = [(0, 1)] * n
-    cons = [
-        {"type": "eq", "fun": lambda w: np.sum(w) - 1},
-        {"type": "ineq", "fun": lambda w: max_vol - portfolio_vol(w, cov)}
-    ]
-    def obj(w): return -sharpe_ratio(w, mu, cov, rf)
-    res = minimize(obj, x0, method="SLSQP", bounds=bounds, constraints=cons)
-    return res.x
 
 
 # ===== Strategy definitions =====
@@ -404,18 +414,36 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
 # ===== Main app (questionnaire + portfolios) =====
 if st.session_state["page"] == "app":
 
-    # Small Clyde on top right
-    header_col1, header_col2 = st.columns([0.9, 0.1])
-    with header_col1:
-        st.markdown("### Clyde – Your robo‑advisor")
-    with header_col2:
+    # Header with back button and Clyde image
+    top_left, top_right = st.columns([0.6, 0.4])
+    with top_left:
+        back_col1, back_col2 = st.columns([0.2, 0.8])
+        with back_col1:
+            if st.button("⬅️ Back"):
+                go_to_landing()
+                st.rerun()
+        with back_col2:
+            st.markdown("### Clyde – Your robo‑advisor")
+    with top_right:
         st.image("clyde.png", width=60)
 
     st.title("Portfolio strategies for you")
 
-    # Button to go back and redo questionnaire
+    # Question: how much to invest
+    invest_amount = st.number_input(
+        "How much do you want to invest?",
+        min_value=1000,
+        max_value=1_000_000,
+        value=10_000,
+        step=1000,
+        help="Choose an approximate amount you plan to invest.",
+    )
+    st.session_state["invest_amount"] = invest_amount
+
+    # Button to reset questionnaire
     if st.button("Change my answers / risk profile"):
         reset_profile()
+
     # Only ask questionnaire if we do not already have profile
     if "profile" not in st.session_state or "esg_only" not in st.session_state:
         profile, esg_only = risk_profile_from_answers()
@@ -444,18 +472,19 @@ if st.session_state["page"] == "app":
             st.session_state["tickers"] = None
             st.session_state["base_table"] = None
 
+        # Horizontal strategy cards
         cols = st.columns(len(candidate_names))
         chosen_strategy = st.session_state.get("chosen_strategy", candidate_names[0])
 
-        for i, name in enumerate(candidate_names):
+        for col, name in zip(cols, candidate_names):
             info = STRATEGIES[name]
-            with cols[i]:
+            with col:
                 label = name + " 🌱" if info["type"] == "esg" else name
                 card = st.container(border=True)
                 with card:
                     st.subheader(label)
-                    st.write(info["description"])
-                    if st.button(f"Select {name}", key=f"choose_{name}"):
+                    st.caption(info["description"])
+                    if st.button("Select", key=f"choose_{name}"):
                         chosen_strategy = name
 
         st.session_state["chosen_strategy"] = chosen_strategy
@@ -501,7 +530,7 @@ if st.session_state["page"] == "app":
             ])
             st.session_state["built_portfolios"] = True
 
-        # Show base portfolios table only
+        # Show base portfolios table and tools
         if (
             st.session_state.get("built_portfolios", False)
             and st.session_state["mu"] is not None
@@ -522,8 +551,8 @@ if st.session_state["page"] == "app":
                     {c: "{:.1%}" for c in base_table.columns if c.startswith("w_")}
                 )
             )
-                          
- # === KPI summary for the currently selected base portfolio ===
+
+            # === KPI summary for the currently selected base portfolio ===
             options = list(base_table["Portfolio"])
             ref_name = st.selectbox("Choose base portfolio", options)
             base_row = base_table[base_table["Portfolio"] == ref_name].iloc[0]
@@ -538,7 +567,32 @@ if st.session_state["page"] == "app":
                 st.metric("Volatility", f"{base_row['Volatility']:.2%}")
             with col_s:
                 st.metric("Sharpe ratio", f"{base_sh:.2f}")
-              
+
+            # Inflation / deflation scenarios
+            st.markdown("#### Inflation / deflation scenarios")
+
+            infl_scenario = st.selectbox(
+                "Choose an inflation scenario",
+                ["Deflation (−1%)", "Low inflation (2%)", "Moderate inflation (4%)", "High inflation (7%)"],
+            )
+
+            scenario_map = {
+                "Deflation (−1%)": -0.01,
+                "Low inflation (2%)": 0.02,
+                "Moderate inflation (4%)": 0.04,
+                "High inflation (7%)": 0.07,
+            }
+            pi = scenario_map[infl_scenario]
+
+            nominal_ret = float(base_row["Expected Return"])
+            real_ret = nominal_ret - pi
+
+            col_nom, col_real = st.columns(2)
+            with col_nom:
+                st.metric("Nominal expected return", f"{nominal_ret:.2%}")
+            with col_real:
+                st.metric("Real return (after inflation)", f"{real_ret:.2%}")
+
             st.subheader("Adjust weights and see the impact")
 
             st.write(
@@ -546,7 +600,7 @@ if st.session_state["page"] == "app":
                 f"vol {base_row['Volatility']:.2%}, Sharpe {base_sh:.2f}"
             )
 
-    # Sliders in percent; will be normalized to sum 100%
+            # Sliders in percent; will be normalized to sum 100%
             weight_cols = st.columns(len(tickers))
             raw_weights = []
             for i, t in enumerate(tickers):
@@ -558,11 +612,11 @@ if st.session_state["page"] == "app":
             if st.button("Evaluate custom portfolio"):
                 raw = np.array(raw_weights)
 
-        # If user sets all zeros, fall back to equal weight
+                # If user sets all zeros, fall back to equal weight
                 if raw.sum() == 0:
                     w = equal_weight(len(tickers))
                 else:
-            # Normalize so total is exactly 100%
+                    # Normalize so total is exactly 100%
                     w = raw / raw.sum()  # now sums to 1.0
 
                 ret_new = portfolio_return(w, mu)
@@ -574,32 +628,47 @@ if st.session_state["page"] == "app":
                     pd.DataFrame({"Ticker": tickers, "Weight": w}).style.format({"Weight": "{:.1%}"})
                 )
 
+                # Show investment amounts given total
+                total_invest = st.session_state.get("invest_amount", 0)
+                allocation = w * total_invest
+                st.write("Investment amounts for each ETF at your chosen total investment:")
+                st.dataframe(
+                    pd.DataFrame(
+                        {"Ticker": tickers, "Weight": w, "Amount": allocation}
+                    ).style.format({"Weight": "{:.1%}", "Amount": "€{:,.0f}"})
+                )
+
                 st.write(
                     f"New portfolio: return {ret_new:.2%}, "
                     f"vol {vol_new:.2%}, Sharpe {sh_new:.2f}"
                 )
 
                 st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sh, profile))
-                
-# ===Efficient frontier chart===
-                vols, rets=efficient_frontier(mu,cov,rf=RISK_FREE,n_points=50)
 
-                fig,ax=plt.subplots()
-                ax.plot(vols,rets,label="📈 Efficient frontier")
+                # === Efficient frontier chart ===
+                vols, rets = efficient_frontier(mu, cov, rf=RISK_FREE, n_points=150)
+
+                fig, ax = plt.subplots(figsize=(6, 4))
+                ax.plot(vols, rets, label="Efficient frontier", color="#2563EB", linewidth=2)
+
                 ax.scatter(
                     base_row["Volatility"], base_row["Expected Return"],
-                    color="gray",marker="o",label=f"Base: {ref_name}"
+                    color="gray", marker="o", s=60, label=f"Base: {ref_name}"
                 )
                 ax.scatter(
-                    vol_new,ret_new,
-                    color="green",marker="*",s=120,label="Your custom portfolio"
+                    vol_new, ret_new,
+                    color="#16A34A", marker="*", s=140, label="Your custom portfolio"
                 )
+
                 ax.set_xlabel("Volatility (risk)")
                 ax.set_ylabel("Expected return")
-                ax.set_title("Risk-return profile")
-                ax.legend()
-                ax.grid(True,alpha=0.3)
+                ax.set_title("Risk–return profile")
 
+                ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0%}"))
+                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0%}"))
+
+                ax.grid(True, alpha=0.3)
+                ax.legend()
                 st.pyplot(fig)
         else:
             st.info("Click 'Build portfolios for this strategy' to see portfolio options.")
