@@ -105,7 +105,7 @@ if st.session_state["page"] == "landing":
 
     # Who Clyde is for
     st.markdown("### Who Clyde might be right for")
-    st.markmarkdown(
+    st.markdown(
         "- You are investing for 3 or more years.\n"
         "- You want a professionally designed ETF mix instead of picking single stocks.\n"
         "- You are comfortable with some risk in exchange for potential growth.\n"
