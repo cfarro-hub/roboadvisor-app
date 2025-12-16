@@ -481,6 +481,7 @@ if st.session_state["page"] == "app":
         help="Choose an approximate amount you plan to invest.",
     )
     st.session_state["invest_amount"] = invest_amount
+    st.caption("Minimum investment amount is 1,000 (amounts below this are not allowed).")
 
     # Button to reset questionnaire
     if st.button("Change my answers / risk profile"):
