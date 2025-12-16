@@ -692,40 +692,39 @@ if st.session_state["page"] == "app":
 
                 st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sh, profile))
 
-               # === Efficient frontier chart ===
+                # === Efficient frontier chart ===
                 vols, rets = efficient_frontier(mu, cov, rf=RISK_FREE, n_points=150)
                 
                 fig, ax = plt.subplots(figsize=(7, 4))
                 
-                # Softer light‑green frontier line
+                # Light‑green efficient frontier line
                 ax.plot(
                     vols,
                     rets,
                     label="Efficient frontier",
                     color="#4ade80",          # light green
                     linewidth=2.0,
-                    linestyle="-",
                 )
                 
-                # Smaller Max‑Sharpe dot
+                # Base portfolio (e.g. Max Sharpe or selected ref_name)
                 ax.scatter(
                     base_row["Volatility"],
                     base_row["Expected Return"],
                     color="#22c55e",          # medium green
                     edgecolor="white",
-                    s=50,                     # smaller than before
+                    s=50,
                     zorder=3,
                     label=f"Base: {ref_name}",
                 )
                 
-                # Smaller custom‑portfolio star, different color
+                # Your custom portfolio
                 ax.scatter(
                     vol_new,
                     ret_new,
                     color="#f97316",          # orange
                     edgecolor="white",
                     marker="*",
-                    s=80,                     # smaller star
+                    s=80,
                     zorder=4,
                     label="Your portfolio",
                 )
@@ -734,18 +733,24 @@ if st.session_state["page"] == "app":
                 ax.set_xlabel("Volatility (%)", fontsize=12)
                 ax.set_ylabel("Return (%)", fontsize=12)
                 
-                # Percent formatting
+                # Format axes as percentages
                 ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*100:.0f}%"))
                 ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y*100:.0f}%"))
                 
-                # Optional fixed frame so look is consistent
-                ax.set_xlim(0.03, 0.25)
-                ax.set_ylim(0.00, 0.20)
+                # Ensure the line, base, and custom points are always in view
+                all_vols = np.concatenate([vols, [base_row["Volatility"], vol_new]])
+                all_rets = np.concatenate([rets, [base_row["Expected Return"], ret_new]])
                 
-                # Light dashed grid
+                x_min = all_vols.min() * 0.9
+                x_max = all_vols.max() * 1.1
+                y_min = all_rets.min() * 0.9
+                y_max = all_rets.max() * 1.1
+                
+                ax.set_xlim(x_min, x_max)
+                ax.set_ylim(y_min, y_max)
+                
+                # Light dashed grid and legend
                 ax.grid(True, which="both", linestyle="--", alpha=0.25)
-                
-                # Simple legend
                 ax.legend(loc="best", frameon=False)
                 
                 plt.tight_layout()
