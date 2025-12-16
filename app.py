@@ -595,47 +595,50 @@ if st.session_state["page"] == "app":
             with col_real:
                 st.metric("Real return (after inflation)", f"{real_ret:.2%}")
 
-            st.markdown("### Clyde's take on this scenario")
+            st.markdown("#### Clyde’s take on this scenario")
 
-            def inflation_advice(scenaario, profile):
-                if scenario =="Deflation (-1%)":
-                    msg = (
-                        "In deflation, cash and high-qualoty bonds usually hold up better, "
-                        "while risk assets like equities can suffer as growth slows. "
-                        "Keeping some cash and investment-grade bonds can help you ride out stress periods."
-                    )
-                    if profile =="aggressive":
-                        msg+=" As an aggressive investor, avoid panic-selling but consider trimming very speculative positions."
-                    else:
-                        msg+=" As a conservative or balanced investor, maintaining diversification and quality is key."
-                elif scenario =="Low inflation (2%)":
-                    msg = (
-                        "Low, stable inflation is usually a good environment for diversified stock-bond portfolios. "
-                        "Your focus should stay on long-term goals rather than tactical changes."
-                    )
-                    msg+=" Keeping your current risk profile and rebalancing occasionally is typically enough."
-                elif scenario =="Moderate inflation (4%)":
-                    msg = (
-                        "Moderate inflation starts to erode bond and cash returns in real terms, "
-                        "But growth assets like equities can still compensate over time. "
-                        "Tilting slightly toward quality stocks, real assets, or shorter-duration bonds can help."
-                    )
-                    if profile == "conservative':
-                        msg += " AS a conservative investor, review how much is in long-term fixed-rate bonds and consider shortening duration."
-                    else:
-                        msg += " As a balanced or aggresive investor, make sure you are not overly concentrated in long-duration bonds."
-                else:
-                    msg = (
-                        "High inflation strongly reduces your real return; bonds and cash can lose purchasing power quickly. "
-                        "Historically, equities tied to real assets and inflation-linked securities have offered better protection."
-                    )
-                    if profile=="conservative":
-                        msg+= "Consider spreading risk across short-term bonds, some equities, and possibly inflation-linked bonds instead of holding too much cash."
-                    else:
-                        msg += " As a growth-oriented investor, keep diversified equities but be mindful of very rate-sensitive sectors and very long-duration bonds."
-                        return msg
-                        
-            st.info(inflation_advice(infl_scenario, profile))
+def inflation_advice(scenario, profile):
+    if scenario == "Deflation (−1%)":
+        msg = (
+            "In deflation, cash and high-quality bonds usually hold up better, "
+            "while risk assets like equities can suffer as growth slows. "
+            "Keeping some cash and investment-grade bonds can help you ride out stress periods."
+        )
+        if profile == "aggressive":
+            msg += " As an aggressive investor, avoid panic-selling but consider trimming very speculative positions."
+        else:
+            msg += " As a conservative or balanced investor, maintaining diversification and quality is key."
+    elif scenario == "Low inflation (2%)":
+        msg = (
+            "Low, stable inflation is usually a good environment for diversified stock-bond portfolios. "
+            "Your focus should stay on long-term goals rather than tactical changes."
+        )
+        msg += " Keeping your current risk profile and rebalancing occasionally is typically enough."
+    elif scenario == "Moderate inflation (4%)":
+        msg = (
+            "Moderate inflation starts to erode bond and cash returns in real terms, "
+            "but growth assets like equities can still compensate over time. "
+            "Tilting slightly toward quality stocks, real assets, or shorter-duration bonds can help."
+        )
+        if profile == "conservative":
+            msg += " As a conservative investor, review how much is in long-term fixed-rate bonds and consider shortening duration."
+        else:
+            msg += " As a balanced or aggressive investor, make sure you are not overly concentrated in long-duration bonds."
+    else:  # "High inflation (7%)"
+        msg = (
+            "High inflation strongly reduces your real return; bonds and cash can lose purchasing power quickly. "
+            "Historically, equities tied to real assets and inflation-linked securities have offered better protection."
+        )
+        if profile == "conservative":
+            msg += " Consider spreading risk across short-term bonds, some equities, and possibly inflation-linked bonds instead of holding too much cash."
+        else:
+            msg += " As a growth-oriented investor, keep diversified equities but be mindful of very rate-sensitive sectors and very long-duration bonds."
+
+    msg += " This is general guidance, not personalized financial advice."
+    return msg
+
+st.info(inflation_advice(infl_scenario, profile))
+
 
             st.subheader("Adjust weights and see the impact")
 
