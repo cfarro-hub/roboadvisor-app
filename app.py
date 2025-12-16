@@ -478,16 +478,16 @@ if st.session_state["page"] == "app":
         for row_start in range(0, len(candidate_names), cards_per_row):
             row_names = candidate_names[row_start:row_start + cards_per_row]
             cols = st.columns(len(row_names))
-        for col, name in zip(cols, row_names):
-            info = STRATEGIES[name]
-            with col:
-                label = name + " 🌱" if info["type"] == "esg" else name
-                card = st.container(border=True)
-                with card:
-                    st.subheader(label)
-                    st.caption(info["description"])
-                    if st.button("Select", key=f"choose_{name}"):
-                        chosen_strategy = name
+            for col, name in zip(cols, row_names):
+                info = STRATEGIES[name]
+                with col:
+                    label = name + " 🌱" if info["type"] == "esg" else name
+                    card = st.container(border=True)
+                    with card:
+                        st.subheader(label)
+                        st.caption(info["description"])
+                        if st.button("Select", key=f"choose_{name}"):
+                            chosen_strategy = name
 
         st.session_state["chosen_strategy"] = chosen_strategy
 
