@@ -4,6 +4,7 @@ import pandas as pd
 import yfinance as yf
 from scipy.optimize import minimize
 import datetime as dt
+import matplotlib.pyplot as plt
 
 # ===== Global config =====
 RISK_FREE = 0.02
@@ -16,13 +17,19 @@ st.set_page_config(page_title="Clyde – Robo‑Advisor", layout="wide")
 st.markdown(
     """
     <style>
-    /* Narrow the main content width for a more article-like feel */
     .block-container {
         max-width: 900px;
         padding-top: 3.5rem;
         padding-bottom: 2rem;
     }
-    /* Tighter spacing between form widgets */
+    div[data-testid="stContainer"][class*"st-emotion-cache"][style*="border]{
+        border-radius: 1rem;
+        border: 1px solid #0E9F6E;
+        background: linear-gradient(135deg, #ECFDF,#FFFFFF);
+        box-shadow: 0 10px 25px rgba(14, 159, 110, 0,12);
+        padding: 1.1rem 1.4rem;
+        margin-bottom: 1.25rem;
+    }
     form div[data-baseweb="base-input"] {
         margin-bottom: 0.25rem;
     }
@@ -58,7 +65,7 @@ if st.session_state["page"] == "landing":
             "- Built from your answers to a short questionnaire\n"
             "- Monitored and adjusted over time"
         )
-        if st.button("Start your questionnaire"):
+        if st.button("📋 Start your questionnaire"):
             go_to_app()
             st.rerun()
     with hero_right:
@@ -171,6 +178,21 @@ def max_sharpe_portfolio(mu, cov, rf=RISK_FREE):
     res = minimize(obj, x0, method="SLSQP", bounds=bounds, constraints=cons)
     return res.x
 
+def efficient_frontier(mu,cov,rf=RISK_FREE, n_points=50):
+    n = len(mu)
+    vols = []
+    rets = []
+
+    w_gmv = gmv_portfolio(cov)
+    min_vol=portfolio_vol(w_gmv,cov)
+    max_vol=min_vol*3
+
+    for target_vol in np.linspace(min_vol,max_vol,n_points):
+        w=max_sharpe_with_risk_target(mu,cov,rf,target_vol)
+        vols.append(portfolio_vol(w,cov))
+        rets.append(portfolio_return(w,mu))
+
+    return np.array(vols),np.array(rets)
 
 # ===== Risk profiling =====
 def risk_profile_from_answers():
@@ -411,7 +433,7 @@ if st.session_state["page"] == "app":
         st.session_state["built_portfolios"] = False
 
     with st.expander("View recommended portfolios", expanded=True):
-        st.header("Strategy options for your profile")
+        st.header("📊 Strategy options for your profile")
 
         candidate_names = strategies_for_profile(profile, esg_only)
 
@@ -479,7 +501,7 @@ if st.session_state["page"] == "app":
             ])
             st.session_state["built_portfolios"] = True
 
-        # Show base portfolios table only (no weight sliders)
+        # Show base portfolios table only
         if (
             st.session_state.get("built_portfolios", False)
             and st.session_state["mu"] is not None
@@ -500,6 +522,23 @@ if st.session_state["page"] == "app":
                     {c: "{:.1%}" for c in base_table.columns if c.startswith("w_")}
                 )
             )
+                          
+ # === KPI summary for the currently selected base portfolio ===
+            options = list(base_table["Portfolio"])
+            ref_name = st.selectbox("Choose base portfolio", options)
+            base_row = base_table[base_table["Portfolio"] == ref_name].iloc[0]
+            base_sh = base_row["Sharpe"]
+
+            st.markdown("#### Snapshot of selected portfolio")
+
+            col_r, col_v, col_s = st.columns(3)
+            with col_r:
+                st.metric("Expected return", f"{base_row['Expected Return']:.2%}")
+            with col_v:
+                st.metric("Volatility", f"{base_row['Volatility']:.2%}")
+            with col_s:
+                st.metric("Sharpe ratio", f"{base_sh:.2f}")
+              
             st.subheader("Adjust weights and see the impact")
 
             options = list(base_table["Portfolio"])
@@ -546,6 +585,26 @@ if st.session_state["page"] == "app":
                 )
 
                 st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sh, profile))
+                
+# ===Efficient frontier chart===
+                vols, rets=efficient_frontier(mu,cov,rf=RISK_FREE,n_points=50)
 
+                fig,ax=plt.subplots()
+                ax.plot(vols,rets,label="📈 Efficient frontier")
+                ax.scatter(
+                    base_row["Volatility"], base_row["Expected Return"],
+                    color="gray",marker="o",label=f"Base: {ref_name}"
+                )
+                ax.scatter(
+                    vol_new,ret_new,
+                    color="green",marker="*",s=120,label="Your custom portfolio"
+                )
+                ax.set_xlabel("Volatility (risk)")
+                ax.set_ylabel("Expected return")
+                ax.set_title("Risk-return profile")
+                ax.legend()
+                ax.grid(True,alpha=0.3)
+
+                st.pyplot(fig)
         else:
             st.info("Click 'Build portfolios for this strategy' to see portfolio options.")
