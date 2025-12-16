@@ -692,54 +692,65 @@ if st.session_state["page"] == "app":
 
                 st.info(roboadvisor_comment(ret_new, vol_new, sh_new, base_sh, profile))
 
-               # === Efficient frontier chart (Plotly) ===
+               # === Efficient frontier chart ===
                 vols, rets = efficient_frontier(mu, cov, rf=RISK_FREE, n_points=150)
+                
+                fig, ax = plt.subplots(figsize=(7, 4))
+                
+                # Softer light‑green frontier line
+                ax.plot(
+                    vols,
+                    rets,
+                    label="Efficient frontier",
+                    color="#4ade80",          # light green
+                    linewidth=2.0,
+                    linestyle="-",
+                )
+                
+                # Smaller Max‑Sharpe dot
+                ax.scatter(
+                    base_row["Volatility"],
+                    base_row["Expected Return"],
+                    color="#22c55e",          # medium green
+                    edgecolor="white",
+                    s=50,                     # smaller than before
+                    zorder=3,
+                    label=f"Base: {ref_name}",
+                )
+                
+                # Smaller custom‑portfolio star, different color
+                ax.scatter(
+                    vol_new,
+                    ret_new,
+                    color="#f97316",          # orange
+                    edgecolor="white",
+                    marker="*",
+                    s=80,                     # smaller star
+                    zorder=4,
+                    label="Your portfolio",
+                )
+                
+                ax.set_title("Efficient Frontier", fontsize=16, pad=10)
+                ax.set_xlabel("Volatility (%)", fontsize=12)
+                ax.set_ylabel("Return (%)", fontsize=12)
+                
+                # Percent formatting
+                ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*100:.0f}%"))
+                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y*100:.0f}%"))
+                
+                # Optional fixed frame so look is consistent
+                ax.set_xlim(0.03, 0.25)
+                ax.set_ylim(0.00, 0.20)
+                
+                # Light dashed grid
+                ax.grid(True, which="both", linestyle="--", alpha=0.25)
+                
+                # Simple legend
+                ax.legend(loc="best", frameon=False)
+                
+                plt.tight_layout()
+                st.pyplot(fig)
 
-                # Convert to percent for display (like your JS example)
-                x_frontier = vols * 100
-                y_frontier = rets * 100
-                x_base = [base_row["Volatility"] * 100]
-                y_base = [base_row["Expected Return"] * 100]
-                x_port = [vol_new * 100]
-                y_port = [ret_new * 100]
-
-                trace1 = go.Scatter(
-                    x=x_frontier,
-                    y=y_frontier,
-                    mode="lines",
-                    name="Efficient Frontier",
-                    line=dict(color="#667eea", width=3),
-                )
-
-                trace2 = go.Scatter(
-                    x=x_base,
-                    y=y_base,
-                    mode="markers",
-                    name="Max Sharpe",
-                    marker=dict(size=12, color="green"),
-                )
-                
-                trace3 = go.Scatter(
-                    x=x_port,
-                    y=y_port,
-                    mode="markers",
-                    name="Your Portfolio",
-                    marker=dict(size=12, color="red"),
-                )
-                
-                layout = go.Layout(
-                    title="Efficient Frontier",
-                    xaxis=dict(title="Volatility (%)"),
-                    yaxis=dict(title="Return (%)"),
-                    plot_bgcolor="#f8f9fa",
-                    paper_bgcolor="white",
-                    height=400,
-                    margin=dict(l=60, r=20, b=60, t=40),
-                )
-                
-                fig = go.Figure(data=[trace1, trace2, trace3], layout=layout)
-                
-                st.plotly_chart(fig, use_container_width=True)
 
 
         else:
