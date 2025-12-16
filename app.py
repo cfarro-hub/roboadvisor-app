@@ -695,35 +695,55 @@ if st.session_state["page"] == "app":
                 # === Efficient frontier chart ===
                 vols, rets = efficient_frontier(mu, cov, rf=RISK_FREE, n_points=150)
 
-                fig, ax = plt.subplots(figsize=(6, 4))
+                fig, ax = plt.subplots(figsize=(7, 4))
 
-                # Plot frontier line
-                ax.plot(vols, rets, label="Efficient frontier", color="#2563EB", linewidth=2)
+                # Frontier line
+                ax.plot(
+                    vols, rets,
+                    color="#2563EB",
+                    linewidth=2.5,
+                    label="Efficient Frontier",
+                )
 
-                # Base and custom points
+                # Max Sharpe (base) point
                 ax.scatter(
                     base_row["Volatility"], base_row["Expected Return"],
-                    color="gray", marker="o", s=60, label=f"Base: {ref_name}"
+                    color="green",
+                    edgecolor="white",
+                    s=80,
+                    zorder=3,
+                    label=f"Max Sharpe",
                 )
+
+                # Your custom portfolio
                 ax.scatter(
                     vol_new, ret_new,
-                    color="#16A34A", marker="*", s=140, label="Your custom portfolio"
+                    color="red",
+                    edgecolor="white",
+                    s=90,
+                    zorder=4,
+                    label="Your Portfolio",
                 )
 
-                ax.set_xlabel("Volatility (risk)")
-                ax.set_ylabel("Expected return")
-                ax.set_title("Risk–return profile")
+                ax.set_title("Efficient Frontier", fontsize=16, pad=10)
+                ax.set_xlabel("Volatility (%)", fontsize=12)
+                ax.set_ylabel("Return (%)", fontsize=12)
 
-                # --- FIXED AXIS LIMITS: same frame for all strategies ---
-                ax.set_xlim(0.05, 0.30)   # 5% to 30% volatility
-                ax.set_ylim(0.00, 0.20)   # 0% to 20% expected return
-                # --------------------------------------------------------
+                # Format axes as percentages
+                ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*100:.0f}%"))
+                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y*100:.0f}%"))
 
-                ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0%}"))
-                ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0%}"))
+                # Optional: gentle fixed limits so frame looks similar each time
+                ax.set_xlim(0.03, 0.25)
+                ax.set_ylim(0.00, 0.20)
 
-                ax.grid(True, alpha=0.3)
-                ax.legend()
+                # Lighter grid
+                ax.grid(True, which="both", linestyle="--", alpha=0.3)
+
+                # Legend outside on the right
+                ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), frameon=False)
+
+                plt.tight_layout()
                 st.pyplot(fig)
 
         else:
