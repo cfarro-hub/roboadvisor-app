@@ -4,7 +4,7 @@ import pandas as pd
 import yfinance as yf
 from scipy.optimize import minimize
 import datetime as dt
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 
 # ===== Global config =====
 RISK_FREE = 0.02
