@@ -696,8 +696,11 @@ if st.session_state["page"] == "app":
                 vols, rets = efficient_frontier(mu, cov, rf=RISK_FREE, n_points=150)
 
                 fig, ax = plt.subplots(figsize=(6, 4))
+
+                # Plot frontier line
                 ax.plot(vols, rets, label="Efficient frontier", color="#2563EB", linewidth=2)
 
+                # Base and custom points
                 ax.scatter(
                     base_row["Volatility"], base_row["Expected Return"],
                     color="gray", marker="o", s=60, label=f"Base: {ref_name}"
@@ -711,11 +714,17 @@ if st.session_state["page"] == "app":
                 ax.set_ylabel("Expected return")
                 ax.set_title("Risk–return profile")
 
+                # --- FIXED AXIS LIMITS: same frame for all strategies ---
+                ax.set_xlim(0.05, 0.30)   # 5% to 30% volatility
+                ax.set_ylim(0.00, 0.20)   # 0% to 20% expected return
+                # --------------------------------------------------------
+
                 ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0%}"))
                 ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0%}"))
 
                 ax.grid(True, alpha=0.3)
                 ax.legend()
                 st.pyplot(fig)
+
         else:
             st.info("Click 'Build portfolios for this strategy' to see portfolio options.")
