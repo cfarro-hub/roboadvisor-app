@@ -331,15 +331,15 @@ def risk_profile_from_answers():
 
     return profile, esg_only
 
-
-def risk_target_from_profile(profile):
+def risk_target_from_profile(profile, vol_ms):
+    """Choose a target volatility relative to the unconstrained max‑Sharpe vol."""
     if profile == "conservative":
-        return 0.08
+        return vol_ms * 0.7    # 30% less risk than max Sharpe
     elif profile == "balanced":
-        return 0.15
+        return vol_ms          # same risk as max Sharpe
     elif profile == "aggressive":
-        return 0.25
-    return 0.15
+        return vol_ms * 1.3    # 30% more risk than max Sharpe (if feasible)
+    return vol_ms
 
 
 # ===== Strategy definitions =====
@@ -549,14 +549,22 @@ if st.session_state["page"] == "app":
             st.session_state["mu"] = mu
             st.session_state["cov"] = cov
             st.session_state["tickers"] = tickers_new
-
+            
             n = len(tickers_new)
             ew = equal_weight(n)
             gmv = gmv_portfolio(cov)
             ms = max_sharpe_portfolio(mu, cov, RISK_FREE)
+            
+            # Volatility of the unconstrained Max Sharpe portfolio
+            vol_ms = portfolio_vol(ms, cov)
+            
+            # Profile‑specific target volatility
+            target_vol = risk_target_from_profile(profile, vol_ms)
+            
             ms_prof = max_sharpe_with_risk_target(
-                mu, cov, RISK_FREE, risk_target_from_profile(profile)
+                mu, cov, RISK_FREE, target_vol
             )
+
 
             def row(name, w):
                 return {
