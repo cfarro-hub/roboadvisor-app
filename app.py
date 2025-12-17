@@ -637,9 +637,55 @@ if st.session_state["page"] == "app":
                 st.metric("Nominal expected return", f"{nominal_ret:.2%}")
             with col_real:
                 st.metric("Real return (after inflation)", f"{real_ret:.2%}")
-
+                
+            #===Clyde's Advice for the Different Inflation Scenario's===
             st.markdown("#### Clyde’s take on this scenario")
             st.info(inflation_advice(infl_scenario, profile))
+
+            st.markdown("#### Clyde’s portfolio suggestion")
+
+            def recommend_portfolio_for_inflation(scenario, profile, base_table):
+                """
+                Returns the name of a base portfolio Clyde would suggest
+                and a one‑line explanation.
+                """
+                # Map names in your base_table to something readable
+                conservative_name = "Global Min Variance (GMV)"
+                balanced_name = f"Profile Max Sharpe ({profile})"
+                aggressive_name = "Max Sharpe"
+            
+                if scenario == "Deflation (−1%)":
+                    # More emphasis on stability and quality.[web:292][web:293]
+                    if profile == "aggressive":
+                        name = balanced_name
+                    else:
+                        name = conservative_name
+                    reason = "In deflation, preserving capital and limiting drawdowns becomes more important than chasing return."
+                elif scenario == "Low inflation (2%)":
+                    # Normal environment: follow profile.[web:291][web:295]
+                    name = balanced_name
+                    reason = "With low, stable inflation, following your risk profile is usually appropriate."
+                elif scenario == "Moderate inflation (4%)":
+                    # Slight tilt away from very long‑duration risk.[web:291][web:296]
+                    if profile == "conservative":
+                        name = balanced_name
+                    else:
+                        name = aggressive_name
+                    reason = "Moderate inflation still allows growth, but you may want some tilt toward return‑seeking assets."
+                else:  # "High inflation (7%)"
+                    # Avoid pure nominal‑bond focus; keep some risk assets / real assets.[web:291][web:297][web:307]
+                    if profile == "conservative":
+                        name = balanced_name
+                    else:
+                        name = aggressive_name
+                    reason = "In high inflation, portfolios with more growth and real‑asset exposure tend to protect purchasing power better than very defensive mixes."
+            
+                return name, reason
+            
+            rec_name, rec_reason = recommend_portfolio_for_inflation(infl_scenario, profile, base_table)
+            
+            st.write(f"**Suggested base portfolio:** {rec_name}")
+            st.caption(rec_reason + " This is general guidance, not personalized advice.")
 
             st.subheader("Adjust weights and see the impact")
 
