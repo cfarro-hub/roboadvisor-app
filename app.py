@@ -642,7 +642,7 @@ if st.session_state["page"] == "app":
             st.markdown("#### Clyde’s take on this scenario")
             st.info(inflation_advice(infl_scenario, profile))
 
-            st.markdown("#### Clyde’s strategy suggestion")
+            st.markdown("#### Clyde’s portfolio strategy suggestion")
 
             def recommend_strategy_for_inflation(scenario, profile, strategies_for_user):
                 """
