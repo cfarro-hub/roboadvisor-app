@@ -660,34 +660,40 @@ if st.session_state["page"] == "app":
                     return strategies_for_user[0]
             
                 if scenario == "Deflation (−1%)":
-                    # Favor defensive, income and cash‑like strategies.[web:292][web:296]
+                    # Favor defensive, income and cash-like strategies.
                     prefs = ["Cash Reserve", "BlackRock Target Income", "Core"]
                     strat = pick(prefs)
                     msg = (
-                        "With falling prices and slower growth, Clyde leans toward more defensive, "
-                        "income‑oriented strategies and extra cash flexibility."
+                        "In deflation, preserving capital matters most. I would lean toward more defensive, "
+                        "income-focused strategies like cash reserves and high-quality bond portfolios, "
+                        "using Core mainly as a diversifier rather than the main growth engine."
                     )
+                
                 elif scenario == "Low inflation (2%)":
-                    # Normal regime: follow profile with a broad core mix.[web:291][web:317]
+                    # Normal regime: follow profile with a broad core mix.
                     prefs = ["Core", "ESG Balanced", "Value Tilt"]
                     strat = pick(prefs)
                     msg = (
-                        "With low, stable inflation, Clyde prefers a broad, diversified core portfolio "
-                        "aligned with your risk profile."
+                        "At roughly 2% inflation, diversified portfolios tend to work well. I would anchor you "
+                        "in a Core or ESG Balanced strategy that matches your risk profile and simply rebalance "
+                        "periodically instead of making big tactical changes."
                     )
+                
                 elif scenario == "Moderate inflation (4%)":
-                    # Slight tilt to value/real assets and away from long‑duration bonds.[web:291][web:311]
+                    # Slight tilt to value/real assets and away from long-duration bonds.
                     if profile == "conservative":
-                        prefs = ["Core", "BlackRock Target Income", "ESG Balanced"]
+                        prefs = ["Core", "ESG Balanced", "BlackRock Target Income"]
                     else:
                         prefs = ["Value Tilt", "Core", "ESG Global Equity"]
                     strat = pick(prefs)
                     msg = (
-                        "With moderate inflation, Clyde suggests a tilt toward equities with valuation support "
-                        "and real‑economy exposure, while not over‑relying on long‑duration bonds."
+                        "Around 4% inflation, bond and cash returns start to be eroded in real terms. I would still "
+                        "use Core or ESG Balanced as your anchor, but tilt more toward value and real-economy "
+                        "equity strategies, and avoid concentrating too much in very long-maturity bonds."
                     )
+                
                 else:  # High inflation (7%)
-                    # Prefer equity / real‑asset‑heavy and avoid pure nominal‑bond or cash only.[web:291][web:309][web:294]
+                    # Prefer equity / real-asset-heavy and avoid pure nominal-bond or cash only.
                     if profile == "conservative":
                         prefs = ["Core", "ESG Balanced", "BlackRock Target Income"]
                     elif profile == "balanced":
@@ -696,12 +702,14 @@ if st.session_state["page"] == "app":
                         prefs = ["Value Tilt", "Innovative Technology", "Crypto ETF", "Climate Impact"]
                     strat = pick(prefs)
                     msg = (
-                        "In high inflation, Clyde favors strategies with more equity and real‑asset exposure "
-                        "and less reliance on nominal bonds and cash."
+                        "With high inflation, protecting your purchasing power matters more than maximizing nominal yield. "
+                        "I would favor strategies with more equity and real-asset exposure, and use nominal bonds mainly "
+                        "for diversification rather than as the primary return driver."
                     )
-            
+                
                 msg += " This is general guidance about strategy types, not personalized investment advice."
                 return strat, msg
+
             
             # Use the same candidate_names you already computed for this profile/ESG choice
             candidate_names = strategies_for_profile(profile, esg_only)
