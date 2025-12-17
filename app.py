@@ -642,50 +642,73 @@ if st.session_state["page"] == "app":
             st.markdown("#### Clyde’s take on this scenario")
             st.info(inflation_advice(infl_scenario, profile))
 
-            st.markdown("#### Clyde’s portfolio suggestion")
+            st.markdown("#### Clyde’s strategy suggestion")
 
-            def recommend_portfolio_for_inflation(scenario, profile, base_table):
+            def recommend_strategy_for_inflation(scenario, profile, strategies_for_user):
                 """
-                Returns the name of a base portfolio Clyde would suggest
-                and a one‑line explanation.
+                strategies_for_user = list of strategy names already filtered
+                by profile/ESG (your candidate_names).
+                Returns (strategy_name, message).
                 """
-                # Map names in your base_table to something readable
-                conservative_name = "Global Min Variance (GMV)"
-                balanced_name = f"Profile Max Sharpe ({profile})"
-                aggressive_name = "Max Sharpe"
+            
+                # Helper: choose the first available from a preference list
+                def pick(preferences):
+                    for s in preferences:
+                        if s in strategies_for_user:
+                            return s
+                    # fallback: first available
+                    return strategies_for_user[0]
             
                 if scenario == "Deflation (−1%)":
-                    # More emphasis on stability and quality.[web:292][web:293]
-                    if profile == "aggressive":
-                        name = balanced_name
-                    else:
-                        name = conservative_name
-                    reason = "In deflation, preserving capital and limiting drawdowns becomes more important than chasing return."
+                    # Favor defensive, income and cash‑like strategies.[web:292][web:296]
+                    prefs = ["Cash Reserve", "BlackRock Target Income", "Core"]
+                    strat = pick(prefs)
+                    msg = (
+                        "With falling prices and slower growth, Clyde leans toward more defensive, "
+                        "income‑oriented strategies and extra cash flexibility."
+                    )
                 elif scenario == "Low inflation (2%)":
-                    # Normal environment: follow profile.[web:291][web:295]
-                    name = balanced_name
-                    reason = "With low, stable inflation, following your risk profile is usually appropriate."
+                    # Normal regime: follow profile with a broad core mix.[web:291][web:317]
+                    prefs = ["Core", "ESG Balanced", "Value Tilt"]
+                    strat = pick(prefs)
+                    msg = (
+                        "With low, stable inflation, Clyde prefers a broad, diversified core portfolio "
+                        "aligned with your risk profile."
+                    )
                 elif scenario == "Moderate inflation (4%)":
-                    # Slight tilt away from very long‑duration risk.[web:291][web:296]
+                    # Slight tilt to value/real assets and away from long‑duration bonds.[web:291][web:311]
                     if profile == "conservative":
-                        name = balanced_name
+                        prefs = ["Core", "BlackRock Target Income", "ESG Balanced"]
                     else:
-                        name = aggressive_name
-                    reason = "Moderate inflation still allows growth, but you may want some tilt toward return‑seeking assets."
-                else:  # "High inflation (7%)"
-                    # Avoid pure nominal‑bond focus; keep some risk assets / real assets.[web:291][web:297][web:307]
+                        prefs = ["Value Tilt", "Core", "ESG Global Equity"]
+                    strat = pick(prefs)
+                    msg = (
+                        "With moderate inflation, Clyde suggests a tilt toward equities with valuation support "
+                        "and real‑economy exposure, while not over‑relying on long‑duration bonds."
+                    )
+                else:  # High inflation (7%)
+                    # Prefer equity / real‑asset‑heavy and avoid pure nominal‑bond or cash only.[web:291][web:309][web:294]
                     if profile == "conservative":
-                        name = balanced_name
-                    else:
-                        name = aggressive_name
-                    reason = "In high inflation, portfolios with more growth and real‑asset exposure tend to protect purchasing power better than very defensive mixes."
+                        prefs = ["Core", "ESG Balanced", "BlackRock Target Income"]
+                    elif profile == "balanced":
+                        prefs = ["Core", "Value Tilt", "ESG Global Equity", "Climate Impact"]
+                    else:  # aggressive
+                        prefs = ["Value Tilt", "Innovative Technology", "Crypto ETF", "Climate Impact"]
+                    strat = pick(prefs)
+                    msg = (
+                        "In high inflation, Clyde favors strategies with more equity and real‑asset exposure "
+                        "and less reliance on nominal bonds and cash."
+                    )
             
-                return name, reason
+                msg += " This is general guidance about strategy types, not personalized investment advice."
+                return strat, msg
             
-            rec_name, rec_reason = recommend_portfolio_for_inflation(infl_scenario, profile, base_table)
+            # Use the same candidate_names you already computed for this profile/ESG choice
+            candidate_names = strategies_for_profile(profile, esg_only)
+            rec_strategy, rec_msg = recommend_strategy_for_inflation(infl_scenario, profile, candidate_names)
             
-            st.write(f"**Suggested base portfolio:** {rec_name}")
-            st.caption(rec_reason + " This is general guidance, not personalized advice.")
+            st.write(f"**Suggested strategy:** {rec_strategy}")
+            st.caption(rec_msg)
 
             st.subheader("Adjust weights and see the impact")
 
