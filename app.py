@@ -707,7 +707,7 @@ if st.session_state["page"] == "app":
             candidate_names = strategies_for_profile(profile, esg_only)
             rec_strategy, rec_msg = recommend_strategy_for_inflation(infl_scenario, profile, candidate_names)
             
-            st.write(f"**Suggested strategy:** {rec_strategy}")
+            st.write(f"**Suggested portfolio:** {rec_strategy}")
             st.caption(rec_msg)
 
             st.subheader("Adjust weights and see the impact")
