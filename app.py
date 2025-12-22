@@ -704,7 +704,6 @@ if st.session_state["page"] == "app":
                 safe_names = base_table.loc[safe_mask, "Portfolio"].tolist()
                 if safe_names:
                     options = safe_names
-ref_name = st.selectbox("Choose base portfolio", options)
             ref_name = st.selectbox("Choose base portfolio", options)
             base_row = base_table[base_table["Portfolio"] == ref_name].iloc[0]
             base_sh = base_row["Sharpe"]
