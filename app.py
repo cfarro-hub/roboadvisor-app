@@ -264,7 +264,6 @@ def risk_profile_from_answers():
     st.markdown("Tell us about yourself")
 
     with st.form("risk_form"):
-        # One main column so questions are stacked vertically
         st.markdown("#### Time horizon and risk")
 
         horizon = st.slider("Investment horizon (years)", 1, 30, 10)
@@ -330,6 +329,7 @@ def risk_profile_from_answers():
     st.session_state["esg_only"] = esg_only
 
     return profile, esg_only
+
 
 def risk_target_from_profile(profile, vol_ms):
     """Choose a target volatility relative to the unconstrained max‑Sharpe vol."""
@@ -405,6 +405,54 @@ STRATEGIES = {
         "type": "esg",
     },
 }
+ETF_LABELS = {
+    # Core building blocks
+    "VTI": "VTI – US Total Stock Market",
+    "VEA": "VEA – Developed Ex‑US Equities",
+    "VWO": "VWO – Emerging Markets Equities",
+    "BND": "BND – US Total Bond Market",
+    "BNDX": "BNDX – Intl Investment‑Grade Bonds (Hedged)",
+    "VNQ": "VNQ – US REITs",
+    "GLD": "GLD – Gold Trust",
+
+    # Value Tilt
+    "VTV": "VTV – US Large‑Cap Value",
+    "VOE": "VOE – US Mid‑Cap Value",
+    "VBR": "VBR – US Small‑Cap Value",
+
+    # Innovative Technology
+    "QQQ": "QQQ – Nasdaq‑100",
+    "ARKK": "ARKK – Innovation ETF",
+    "ICLN": "ICLN – Global Clean Energy",
+    "SMH": "SMH – Semiconductor ETF",
+    "BOTZ": "BOTZ – Robotics & AI",
+
+    # ESG / Impact
+    "ESGU": "ESGU – US ESG Equities",
+    "ESGD": "ESGD – Dev. Mkts ESG Equities",
+    "ESGE": "ESGE – EM ESG Equities",
+    "ESGN": "ESGN – ESG Global Multifactor",
+    "CRBN": "CRBN – Global Low‑Carbon Equities",
+    "TAN": "TAN – Solar Energy ETF",
+    "GRNB": "GRNB – Green Bond ETF",
+
+    # Bonds / cash
+    "AGG": "AGG – US Aggregate Bond",
+    "LQD": "LQD – Inv‑Grade Corporate Bond",
+    "HYG": "HYG – High‑Yield Corporate Bond",
+    "BIL": "BIL – 1–3 Month T‑Bill ETF",
+
+    # Smart beta
+    "GSLC": "GSLC – US Large‑Cap Core Smart Beta",
+    "GSEW": "GSEW – US Equal‑Weight",
+    "QUAL": "QUAL – Quality Factor",
+    "MTUM": "MTUM – Momentum Factor",
+
+    # Crypto
+    "IBIT": "IBIT – Bitcoin ETF",
+    "FBTC": "FBTC – Bitcoin ETF",
+    "ETHE": "ETHE – Ethereum ETF",
+}
 
 
 def strategies_for_profile(profile, esg_only: bool):
@@ -452,50 +500,77 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
     return " ".join(msgs)
 
 
-# ===== App layout =====
 # ===== Main app (questionnaire + portfolios) =====
 if st.session_state["page"] == "app":
 
-    # Header with back button and Clyde image
+    # Top bar + hero (Betterment-style)
     top_left, top_right = st.columns([0.6, 0.4])
     with top_left:
-        back_col1, back_col2 = st.columns([0.2, 0.8])
+        back_col1, back_col2 = st.columns([0.15, 0.85])
         with back_col1:
-            if st.button("⬅️ Back"):
+            if st.button("← Home"):
                 go_to_landing()
                 st.rerun()
         with back_col2:
-            st.markdown("### Clyde – Your robo‑advisor")
+            st.markdown("#### Clyde – Automated investing")
     with top_right:
-        st.image("clyde.png", width=60)
+        st.markdown(
+            "<div style='text-align:right; font-size:0.9rem; color:#4B5563;'>"
+            "Secure • Diversified • Low effort"
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
-    st.title("Portfolio strategies for you")
+    hero_left, hero_right = st.columns([1.3, 1])
+    with hero_left:
+        st.markdown("## Start investing on autopilot")
+        st.markdown(
+            "Clyde builds and monitors a diversified ETF portfolio for you—"
+            "based on your goals, time horizon, and comfort with risk."
+        )
+        st.markdown(
+            "- Automated rebalancing and risk management\n"
+            "- Globally diversified, low‑cost ETFs\n"
+            "- Portfolios matched to your risk profile"
+        )
+    with hero_right:
+        st.image("clyde.png", width=120)
+        st.metric("Typical time to get a plan", "≈ 2 minutes")
 
-    # Question: how much to invest
-    invest_amount = st.number_input(
-        "How much do you want to invest?",
-        min_value=1000,
-        max_value=1_000_000,
-        value=10_000,
-        step=1000,
-        help="Choose an approximate amount you plan to invest.",
-    )
-    st.session_state["invest_amount"] = invest_amount
-    st.caption("Minimum investment amount is 1,000 (amounts below this are not allowed).")
+    st.markdown("---")
 
-    # Button to reset questionnaire
-    if st.button("Change my answers / risk profile"):
-        reset_profile()
+    # Questionnaire + amount in two columns
+    left_col, right_col = st.columns([1.1, 0.9])
 
-    # Only ask questionnaire if we do not already have profile
-    if "profile" not in st.session_state or "esg_only" not in st.session_state:
-        profile, esg_only = risk_profile_from_answers()
-        if profile is None:
-            st.info("Fill in the questionnaire above to see portfolio strategies tailored to you.")
-            st.stop()
-    else:
-        profile = st.session_state["profile"]
-        esg_only = st.session_state["esg_only"]
+    with left_col:
+        st.markdown("### 1. Tell Clyde about yourself")
+
+        if st.button("Change my answers / risk profile"):
+            reset_profile()
+
+        if "profile" not in st.session_state or "esg_only" not in st.session_state:
+            profile, esg_only = risk_profile_from_answers()
+            if profile is None:
+                st.info("Fill in the questionnaire to unlock your portfolios.")
+                st.stop()
+        else:
+            profile = st.session_state["profile"]
+            esg_only = st.session_state["esg_only"]
+            st.caption(f"Current profile: **{profile.upper()}** | ESG only: **{esg_only}**")
+
+    with right_col:
+        invest_card = st.container(border=True)
+        with invest_card:
+            st.markdown("### 2. Choose how much to invest")
+            invest_amount = st.number_input(
+                "Total investment amount",
+                min_value=1000,
+                max_value=1_000_000,
+                value=10_000,
+                step=1000,
+            )
+            st.session_state["invest_amount"] = invest_amount
+            st.caption("Minimum investment amount is €1,000.")
 
     st.markdown("---")
 
@@ -503,8 +578,12 @@ if st.session_state["page"] == "app":
     if "built_portfolios" not in st.session_state:
         st.session_state["built_portfolios"] = False
 
-    with st.expander("View recommended portfolios", expanded=True):
-        st.header("📊 Strategy options for your profile")
+    with st.expander("View your recommended portfolios", expanded=True):
+        st.markdown("### Clyde’s suggested strategies")
+        st.caption(
+            "These portfolios are built from ETF mixes that match your risk profile. "
+            "Pick one to see its details and risk–return profile."
+        )
 
         candidate_names = strategies_for_profile(profile, esg_only)
 
@@ -529,16 +608,30 @@ if st.session_state["page"] == "app":
                     with card:
                         st.subheader(label)
                         st.caption(info["description"])
+                        st.markdown(
+                            f"<span style='font-size:0.8rem; color:#6B7280;'>"
+                            f"Type: {info['type'].replace('-', ' ').title()}</span>",
+                            unsafe_allow_html=True,
+                        )
                         if st.button("Select", key=f"choose_{name}"):
                             chosen_strategy = name
 
         st.session_state["chosen_strategy"] = chosen_strategy
 
-        st.markdown(f"### Selected strategy: **{chosen_strategy}**")
+        st.markdown(f"### Selected portfolio: **{chosen_strategy}**")
         st.write(STRATEGIES[chosen_strategy]["description"])
 
         tickers = STRATEGIES[chosen_strategy]["tickers"]
-        st.write(f"Universe for this strategy: {', '.join(tickers)}")
+        universe_labels = [ETF_LABELS.get(t, t) for t in tickers]
+        st.write("ETF universe:")
+        for lbl in universe_labels:
+            st.write(f"- {lbl}")
+
+        st.info(
+            "Clyde builds multiple versions of this portfolio (equal‑weight, minimum‑risk, "
+            "max Sharpe, and a version matched to your risk profile). You can compare them "
+            "and then customize the weights."
+        )
 
         # Build portfolios
         if st.button("Build portfolios for this strategy"):
@@ -549,22 +642,21 @@ if st.session_state["page"] == "app":
             st.session_state["mu"] = mu
             st.session_state["cov"] = cov
             st.session_state["tickers"] = tickers_new
-            
+
             n = len(tickers_new)
             ew = equal_weight(n)
             gmv = gmv_portfolio(cov)
             ms = max_sharpe_portfolio(mu, cov, RISK_FREE)
-            
+
             # Volatility of the unconstrained Max Sharpe portfolio
             vol_ms = portfolio_vol(ms, cov)
-            
+
             # Profile‑specific target volatility
             target_vol = risk_target_from_profile(profile, vol_ms)
-            
+
             ms_prof = max_sharpe_with_risk_target(
                 mu, cov, RISK_FREE, target_vol
             )
-
 
             def row(name, w):
                 return {
@@ -607,7 +699,16 @@ if st.session_state["page"] == "app":
 
             # === KPI summary for the currently selected base portfolio ===
             options = list(base_table["Portfolio"])
+            # If user is conservative, hide very high‑vol portfolios from the selector
+            if profile == "conservative":
+                safe_mask = base_table["Volatility"] <= 0.15   # 15% vol cut-off; tweak as needed
+                safe_names = base_table.loc[safe_mask, "Portfolio"].tolist()
+                # Ensure at least GMV is always available
+                if safe_names:
+                    options = safe_names
+            
             ref_name = st.selectbox("Choose base portfolio", options)
+
             base_row = base_table[base_table["Portfolio"] == ref_name].iloc[0]
             base_sh = base_row["Sharpe"]
 
@@ -645,8 +746,8 @@ if st.session_state["page"] == "app":
                 st.metric("Nominal expected return", f"{nominal_ret:.2%}")
             with col_real:
                 st.metric("Real return (after inflation)", f"{real_ret:.2%}")
-                
-            #===Clyde's Advice for the Different Inflation Scenario's===
+
+            # Clyde's narrative advice
             st.markdown("#### Clyde’s take on this scenario")
             st.info(inflation_advice(infl_scenario, profile))
 
@@ -658,17 +759,14 @@ if st.session_state["page"] == "app":
                 by profile/ESG (your candidate_names).
                 Returns (strategy_name, message).
                 """
-            
-                # Helper: choose the first available from a preference list
+
                 def pick(preferences):
                     for s in preferences:
                         if s in strategies_for_user:
                             return s
-                    # fallback: first available
                     return strategies_for_user[0]
-            
+
                 if scenario == "Deflation (−1%)":
-                    # Favor defensive, income and cash-like strategies.
                     prefs = ["Cash Reserve", "BlackRock Target Income", "Core"]
                     strat = pick(prefs)
                     msg = (
@@ -676,9 +774,8 @@ if st.session_state["page"] == "app":
                         "income-focused strategies like cash reserves and high-quality bond portfolios, "
                         "using Core mainly as a diversifier rather than the main growth engine."
                     )
-                
+
                 elif scenario == "Low inflation (2%)":
-                    # Normal regime: follow profile with a broad core mix.
                     prefs = ["Core", "ESG Balanced", "Value Tilt"]
                     strat = pick(prefs)
                     msg = (
@@ -686,9 +783,8 @@ if st.session_state["page"] == "app":
                         "in a Core or ESG Balanced strategy that matches your risk profile and simply rebalance "
                         "periodically instead of making big tactical changes."
                     )
-                
+
                 elif scenario == "Moderate inflation (4%)":
-                    # Slight tilt to value/real assets and away from long-duration bonds.
                     if profile == "conservative":
                         prefs = ["Core", "ESG Balanced", "BlackRock Target Income"]
                     else:
@@ -699,14 +795,13 @@ if st.session_state["page"] == "app":
                         "use Core or ESG Balanced as your anchor, but tilt more toward value and real-economy "
                         "equity strategies, and avoid concentrating too much in very long-maturity bonds."
                     )
-                
+
                 else:  # High inflation (7%)
-                    # Prefer equity / real-asset-heavy and avoid pure nominal-bond or cash only.
                     if profile == "conservative":
                         prefs = ["Core", "ESG Balanced", "BlackRock Target Income"]
                     elif profile == "balanced":
                         prefs = ["Core", "Value Tilt", "ESG Global Equity", "Climate Impact"]
-                    else:  # aggressive
+                    else:
                         prefs = ["Value Tilt", "Innovative Technology", "Crypto ETF", "Climate Impact"]
                     strat = pick(prefs)
                     msg = (
@@ -714,15 +809,15 @@ if st.session_state["page"] == "app":
                         "I would favor strategies with more equity and real-asset exposure, and use nominal bonds mainly "
                         "for diversification rather than as the primary return driver."
                     )
-                
+
                 msg += " This is general guidance about strategy types, not personalized investment advice."
                 return strat, msg
 
-            
-            # Use the same candidate_names you already computed for this profile/ESG choice
             candidate_names = strategies_for_profile(profile, esg_only)
-            rec_strategy, rec_msg = recommend_strategy_for_inflation(infl_scenario, profile, candidate_names)
-            
+            rec_strategy, rec_msg = recommend_strategy_for_inflation(
+                infl_scenario, profile, candidate_names
+            )
+
             st.write(f"**Suggested portfolio:** {rec_strategy}")
             st.caption(rec_msg)
 
@@ -737,7 +832,7 @@ if st.session_state["page"] == "app":
             weight_cols = st.columns(len(tickers))
             raw_weights = []
             for i, t in enumerate(tickers):
-                default_w = float(base_row[f"w_{t}"]) * 100.0  # percent
+                default_w = float(base_row[f"w_{t}"]) * 100.0
                 with weight_cols[i]:
                     w_pct = st.slider(f"{t} (%)", 0.0, 100.0, default_w)
                 raw_weights.append(w_pct)
@@ -745,31 +840,37 @@ if st.session_state["page"] == "app":
             if st.button("Evaluate custom portfolio"):
                 raw = np.array(raw_weights)
 
-                # If user sets all zeros, fall back to equal weight
                 if raw.sum() == 0:
                     w = equal_weight(len(tickers))
                 else:
-                    # Normalize so total is exactly 100%
-                    w = raw / raw.sum()  # now sums to 1.0
+                    w = raw / raw.sum()
 
                 ret_new = portfolio_return(w, mu)
                 vol_new = portfolio_vol(w, cov)
                 sh_new = sharpe_ratio(w, mu, cov, RISK_FREE)
 
                 st.write("New weights (normalized to 100%):")
+                labels = [ETF_LABELS.get(t, t) for t in tickers]
                 st.dataframe(
-                    pd.DataFrame({"Ticker": tickers, "Weight": w}).style.format({"Weight": "{:.1%}"})
+                    pd.DataFrame({"Ticker": tickers, "Name": labels, "Weight": w})
+                      .style.format({"Weight": "{:.1%}"})
                 )
 
-                # Show investment amounts given total
+
                 total_invest = st.session_state.get("invest_amount", 0)
                 allocation = w * total_invest
                 st.write("Investment amounts for each ETF at your chosen total investment:")
                 st.dataframe(
                     pd.DataFrame(
-                        {"Ticker": tickers, "Weight": w, "Amount": allocation}
+                        {
+                            "Ticker": tickers,
+                            "Name": labels,
+                            "Weight": w,
+                            "Amount": allocation,
+                        }
                     ).style.format({"Weight": "{:.1%}", "Amount": "€{:,.0f}"})
                 )
+
 
                 st.write(
                     f"New portfolio: return {ret_new:.2%}, "
@@ -780,69 +881,69 @@ if st.session_state["page"] == "app":
 
                 # === Efficient frontier chart ===
                 vols, rets = efficient_frontier(mu, cov, rf=RISK_FREE, n_points=150)
-                
+
                 fig, ax = plt.subplots(figsize=(7, 4))
-                
-                # Light‑green efficient frontier line
+
                 ax.plot(
                     vols,
                     rets,
                     label="Efficient frontier",
-                    color="#4ade80",          # light green
+                    color="#4ade80",
                     linewidth=2.0,
                 )
-                
-                # Base portfolio (e.g. Max Sharpe or selected ref_name)
+
                 ax.scatter(
                     base_row["Volatility"],
                     base_row["Expected Return"],
-                    color="#22c55e",          # medium green
+                    color="#22c55e",
                     edgecolor="white",
                     s=50,
                     zorder=3,
                     label=f"Base: {ref_name}",
                 )
-                
-                # Your custom portfolio
+
                 ax.scatter(
                     vol_new,
                     ret_new,
-                    color="#f97316",          # orange
+                    color="#f97316",
                     edgecolor="white",
                     marker="*",
                     s=80,
                     zorder=4,
                     label="Your portfolio",
                 )
-                
+
                 ax.set_title("Efficient Frontier", fontsize=16, pad=10)
                 ax.set_xlabel("Volatility (%)", fontsize=12)
                 ax.set_ylabel("Return (%)", fontsize=12)
-                
-                # Format axes as percentages
+
                 ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*100:.0f}%"))
                 ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y*100:.0f}%"))
-                
-                # Ensure the line, base, and custom points are always in view
+
                 all_vols = np.concatenate([vols, [base_row["Volatility"], vol_new]])
                 all_rets = np.concatenate([rets, [base_row["Expected Return"], ret_new]])
-                
+
                 x_min = all_vols.min() * 0.9
                 x_max = all_vols.max() * 1.1
                 y_min = all_rets.min() * 0.9
                 y_max = all_rets.max() * 1.1
-                
+
                 ax.set_xlim(x_min, x_max)
                 ax.set_ylim(y_min, y_max)
-                
-                # Light dashed grid and legend
+
                 ax.grid(True, which="both", linestyle="--", alpha=0.25)
                 ax.legend(loc="best", frameon=False)
-                
+
                 plt.tight_layout()
                 st.pyplot(fig)
 
-
+            st.markdown("---")
+            st.markdown("### How Clyde manages this portfolio")
+            st.markdown(
+                "- **Automated rebalancing:** When markets move, Clyde would rebalance toward your target mix.\n"
+                "- **Risk‑based design:** Portfolios are optimized for return per unit of risk, not just raw return.\n"
+                "- **Goal‑based:** Over time you’ll be able to link portfolios to specific goals (retirement, house, etc.)."
+            )
 
         else:
             st.info("Click 'Build portfolios for this strategy' to see portfolio options.")
