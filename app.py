@@ -544,10 +544,9 @@ if st.session_state["page"] == "app":
 
     with left_col:
         st.markdown("### 1. Tell Clyde about yourself")
-
         if st.button("Change my answers / risk profile"):
             reset_profile()
-
+        
         if "profile" not in st.session_state or "esg_only" not in st.session_state:
             profile, esg_only = risk_profile_from_answers()
             if profile is None:
@@ -559,18 +558,18 @@ if st.session_state["page"] == "app":
             st.caption(f"Current profile: **{profile.upper()}** | ESG only: **{esg_only}**")
 
     with right_col:
+        st.markdown("### 2. Choose how much to invest")
         invest_card = st.container(border=True)
         with invest_card:
-            st.markdown("### 2. Choose how much to invest")
+            st.markdown("### Total investment amount")
             invest_amount = st.number_input(
-                "Total investment amount",
-                min_value=1000,
+                " ",
+                min_value=500,
                 max_value=1_000_000,
                 value=10_000,
                 step=1000,
             )
-            st.session_state["invest_amount"] = invest_amount
-            st.caption("Minimum investment amount is €1,000.")
+            st.caption("Minimum investment amount is €500.")
 
     st.markdown("---")
 
