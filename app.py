@@ -501,8 +501,34 @@ def roboadvisor_comment(ret, vol, sh, base_sh, profile):
 
 
 # ===== Main app (questionnaire + portfolios) =====
+# ===== Main app (questionnaire + portfolios) =====
 if st.session_state["page"] == "app":
 
+    # Sidebar navigation
+    st.sidebar.title("Clyde navigation")
+    app_section = st.sidebar.radio(
+        "Go to",
+        ["Home", "Risk profile & portfolios"],
+        index=1,
+    )
+
+    # ---------- HOME ----------
+    if app_section == "Home":
+        st.markdown("## Welcome to Clyde")
+        st.markdown(
+            "Clyde builds and monitors a diversified ETF portfolio for you, "
+            "based on your goals, time horizon, and comfort with risk."
+        )
+        st.markdown(
+            "- Answer a few questions to get your risk profile\n"
+            "- See recommended ETF strategies\n"
+            "- Customize and compare portfolios along the efficient frontier"
+        )
+        st.markdown("---")
+        st.info("Switch to **'Risk profile & portfolios'** in the sidebar to get your personalized plan.")
+        st.stop()
+
+    # ---------- RISK PROFILE & PORTFOLIOS ----------
     # Top bar + hero (Betterment-style)
     top_left, top_right = st.columns([0.6, 0.4])
     with top_left:
@@ -622,10 +648,7 @@ if st.session_state["page"] == "app":
         st.write(STRATEGIES[chosen_strategy]["description"])
 
         tickers = STRATEGIES[chosen_strategy]["tickers"]
-        universe_labels = [ETF_LABELS.get(t, t) for t in tickers]
-        st.write("ETF universe:")
-        for lbl in universe_labels:
-            st.write(f"- {lbl}")
+        st.write(f"ETF universe: {', '.join(tickers)}")
 
         st.info(
             "Clyde builds multiple versions of this portfolio (equal‑weight, minimum‑risk, "
@@ -699,16 +722,14 @@ if st.session_state["page"] == "app":
 
             # === KPI summary for the currently selected base portfolio ===
             options = list(base_table["Portfolio"])
-            # If user is conservative, hide very high‑vol portfolios from the selector
+            # If very conservative, hide very high‑vol portfolios
             if profile == "conservative":
-                safe_mask = base_table["Volatility"] <= 0.15   # 15% vol cut-off; tweak as needed
+                safe_mask = base_table["Volatility"] <= 0.15
                 safe_names = base_table.loc[safe_mask, "Portfolio"].tolist()
-                # Ensure at least GMV is always available
                 if safe_names:
                     options = safe_names
-            
-            ref_name = st.selectbox("Choose base portfolio", options)
 
+            ref_name = st.selectbox("Choose base portfolio", options)
             base_row = base_table[base_table["Portfolio"] == ref_name].iloc[0]
             base_sh = base_row["Sharpe"]
 
