@@ -540,38 +540,43 @@ if st.session_state["page"] == "app":
     st.markdown("---")
 
     # Questionnaire + amount in two columns
-   left_col, right_col = st.columns([1.1, 0.9])
+    st.markdown("---")
+
+    # Questionnaire + amount in two columns
+    left_col, right_col = st.columns([1.1, 0.9])
 
     with left_col:
         st.markdown("## 1. Tell Clyde about yourself")
-    
-        # Button + slight spacer
+
         if st.button("Change my answers / risk profile"):
             reset_profile()
         st.write("")  # small vertical gap
-    
+
         st.markdown("### Tell us about yourself")
-    
-        # Card around the questionnaire for consistent look
+
         left_card = st.container(border=True)
         with left_card:
             st.markdown("#### Time horizon and risk")
-            # <-- keep all your sliders / radios exactly as before inside here
-            profile, esg_only = (
-                risk_profile_from_answers()
-                if "profile" not in st.session_state or "esg_only" not in st.session_state
-                else (st.session_state["profile"], st.session_state["esg_only"])
-            )
-    
+
+            # Only ask questionnaire if we do not already have profile
+            if "profile" not in st.session_state or "esg_only" not in st.session_state:
+                profile, esg_only = risk_profile_from_answers()
+                if profile is None:
+                    st.info("Fill in the questionnaire above to see portfolio strategies tailored to you.")
+                    st.stop()
+            else:
+                profile = st.session_state["profile"]
+                esg_only = st.session_state["esg_only"]
+                st.caption(f"Current profile: **{profile.upper()}** | ESG only: **{esg_only}**")
+
     with right_col:
-        # Heading OUTSIDE the card so it lines up with the left one
         st.markdown("## 2. Choose how much to invest")
-    
+
         invest_card = st.container(border=True)
         with invest_card:
-            st.markmarkdown("### Total investment amount")
+            st.markdown("### Total investment amount")
             invest_amount = st.number_input(
-                " ",  # empty string to hide the label
+                " ",  # empty label so only the title above shows
                 min_value=500,
                 max_value=1_000_000,
                 value=10_000,
@@ -580,7 +585,6 @@ if st.session_state["page"] == "app":
             )
             st.session_state["invest_amount"] = invest_amount
             st.caption("Minimum investment amount is €500.")
-
 
     st.markdown("---")
 
